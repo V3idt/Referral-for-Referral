@@ -52,7 +52,7 @@ A modern web application for exchanging referral links with verified users. Buil
 
 #### 1. **Clone or navigate to the project**:
 ```bash
-cd base44-nextjs
+cd Referral-for-Referral
 ```
 
 #### 2. **Install dependencies**:
@@ -98,7 +98,7 @@ Navigate to [http://localhost:3000](http://localhost:3000)
 ## Project Structure
 
 ```
-base44-nextjs/
+Referral-for-Referral/
 ├── app/                      # Next.js App Router pages
 │   ├── page.tsx             # Home page (browse links)
 │   ├── my-links/            # My referral links page

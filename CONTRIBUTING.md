@@ -38,8 +38,8 @@ Thank you for your interest in contributing! 🎉
 
 ```bash
 # Clone your fork
-git clone https://github.com/your-username/base44-nextjs.git
-cd base44-nextjs
+git clone https://github.com/your-username/Referral-for-Referral.git
+cd Referral-for-Referral
 
 # Install dependencies
 npm install
