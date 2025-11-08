@@ -112,7 +112,7 @@ function ExchangeCard({ exchange, myUserId, allUsers, onUpdateStatus, isUpdating
             </div>
           )}
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {exchange.status === 'pending' && !isRequester && (
               <Button
                 size="sm"

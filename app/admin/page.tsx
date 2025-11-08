@@ -215,7 +215,7 @@ export default function AdminPage() {
 
           {/* Users Tab */}
           <TabsContent value="users" className="space-y-4">
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
@@ -256,7 +256,7 @@ export default function AdminPage() {
                           </p>
                         )}
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         {user.is_banned ? (
                           <Button
                             size="sm"
@@ -381,7 +381,7 @@ export default function AdminPage() {
 
         {/* Ban User Dialog */}
         <Dialog open={showBanDialog} onOpenChange={setShowBanDialog}>
-          <DialogContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+          <DialogContent className="sm:max-w-[500px] bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
             <DialogHeader>
               <DialogTitle className="text-gray-900 dark:text-white">Ban User</DialogTitle>
               <DialogDescription className="text-gray-600 dark:text-gray-400">
@@ -415,7 +415,7 @@ export default function AdminPage() {
 
         {/* Delete Link Dialog */}
         <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <DialogContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+          <DialogContent className="sm:max-w-[500px] bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
             <DialogHeader>
               <DialogTitle className="text-gray-900 dark:text-white">Delete Referral Link</DialogTitle>
               <DialogDescription className="text-gray-600 dark:text-gray-400">

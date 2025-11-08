@@ -241,7 +241,7 @@ export default function ProfilePage() {
             {/* Stats */}
             <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Account Stats</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Reputation Score</p>
                   <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">

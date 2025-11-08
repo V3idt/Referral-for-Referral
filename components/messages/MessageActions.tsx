@@ -46,7 +46,7 @@ export function MessageActions({ message, currentUserId }: MessageActionsProps) 
       await base44.entities.Message.create({
         sender_id: currentUserId,
         receiver_id: message.sender_id,
-        content: `Exchange Accepted ✅\n\nYour exchange request has been accepted!\n\nYou can now use each other's referral links. When you're done, send a screenshot as proof using the button below.`,
+        content: `Exchange Request Accepted`,
         is_read: false,
         metadata: {
           type: 'exchange_update',
@@ -89,7 +89,7 @@ export function MessageActions({ message, currentUserId }: MessageActionsProps) 
         sender_id: currentUserId,
         receiver_id: message.sender_id,
         //make the text red
-        content: `Exchange Declined ❌\n\nYour exchange request was declined.`,
+        content: `Exchange Request Declined`,
         is_read: false,
         metadata: {
           type: 'exchange_update',
