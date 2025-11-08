@@ -39,7 +39,7 @@ yarn-error.log*
 next-env.d.ts
 
 # Internal documentation (not for public repo)
-# These files are helper docs created during migration
+# These files are helper docs created during migration/setup
 CONVERSION_COMPLETE.md
 MIGRATION_SUMMARY.md
 PRE_PUBLISH_CHECKLIST.md
@@ -47,3 +47,5 @@ READY_TO_PUBLISH.md
 BUILD_SUCCESS.md
 SETUP_GUIDE.md
 QUICKSTART.md
+FRESH_SUPABASE_SETUP.md
+TROUBLESHOOTING_AUTH.md

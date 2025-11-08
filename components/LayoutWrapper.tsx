@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createPageUrl } from "@/lib/utils";
-import { Home, Link2, MessageSquare, Plus, Menu, Moon, Sun } from "lucide-react";
+import { Home, Link2, MessageSquare, Plus, Menu, Moon, Sun, Shield } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -22,35 +22,51 @@ import { base44 } from "@/lib/base44Client";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 
-const navigationItems = [
-  {
-    title: "Browse Links",
-    url: createPageUrl("Home"),
-    icon: Home,
-  },
-  {
-    title: "My Links",
-    url: createPageUrl("MyLinks"),
-    icon: Link2,
-  },
-  {
-    title: "Messages",
-    url: createPageUrl("Messages"),
-    icon: MessageSquare,
-  },
-];
+const getNavigationItems = (isAdmin: boolean) => {
+  const items = [
+    {
+      title: "Browse Links",
+      url: createPageUrl("Home"),
+      icon: Home,
+    },
+    {
+      title: "My Links",
+      url: createPageUrl("MyLinks"),
+      icon: Link2,
+    },
+    {
+      title: "Messages",
+      url: createPageUrl("Messages"),
+      icon: MessageSquare,
+    },
+  ];
+
+  if (isAdmin) {
+    items.push({
+      title: "Admin Panel",
+      url: "/admin",
+      icon: Shield,
+    });
+  }
+
+  return items;
+};
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [user, setUser] = React.useState<any>(null);
-  const [darkMode, setDarkMode] = React.useState(false);
+  const [isAdmin, setIsAdmin] = React.useState(false);
+  const [darkMode, setDarkMode] = React.useState(true); // Default to dark mode
   const [mounted, setMounted] = React.useState(false);
 
   // Load dark mode preference from localStorage after mounting
   React.useEffect(() => {
     setMounted(true);
-    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-    setDarkMode(savedDarkMode);
+    const savedDarkMode = localStorage.getItem('darkMode');
+    // If user has a preference saved, use it; otherwise keep default (true)
+    if (savedDarkMode !== null) {
+      setDarkMode(savedDarkMode === 'true');
+    }
   }, []);
 
   React.useEffect(() => {
@@ -58,6 +74,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
       try {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
+        setIsAdmin(currentUser?.is_admin || false);
         await base44.auth.updateMe({ last_active: new Date().toISOString() });
       } catch {}
     };
@@ -151,7 +168,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
             <SidebarGroup>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {navigationItems.map((item) => (
+                  {getNavigationItems(isAdmin).map((item) => (
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton 
                         asChild 
