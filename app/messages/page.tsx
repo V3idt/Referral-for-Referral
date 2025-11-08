@@ -21,6 +21,7 @@ import {
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { supabase } from "@/lib/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -62,49 +63,157 @@ function MessagesContent() {
   }, [searchParams]);
 
   const { data: allMessages = [], isLoading } = useQuery<MessageType[]>({
-    queryKey: ['messages', user?.email],
+    queryKey: ['messages', user?.id],
     queryFn: async () => {
-      if (!user) return [];
+      if (!user?.id) return [];
       const [sent, received] = await Promise.all([
-        base44.entities.Message.filter({ sender_email: user.email }, '-created_date'),
-        base44.entities.Message.filter({ receiver_email: user.email }, '-created_date'),
+        base44.entities.Message.filter({ sender_id: user.id }),
+        base44.entities.Message.filter({ receiver_id: user.id }),
       ]);
-      return [...sent, ...received];
+      return [...sent, ...received].sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
     },
-    enabled: !!user,
-    refetchInterval: 5000,
+    enabled: !!user?.id,
+    refetchOnWindowFocus: false, // Disabled - using realtime instead
   });
 
+  // Fetch all users for notification sender names (must be before useEffect that uses it)
   const { data: allUsers = [] } = useQuery<User[]>({
     queryKey: ['allUsers'],
     queryFn: () => base44.entities.User.list(),
   });
 
+  // Request notification permission on mount
+  useEffect(() => {
+    const { requestNotificationPermission } = require('@/lib/notifications');
+    requestNotificationPermission();
+  }, []);
+
+  // Set up Supabase Realtime subscription for instant message updates
+  useEffect(() => {
+    if (!user?.id) return;
+
+    // Subscribe to messages where user is either sender OR receiver
+    // Note: Database uses sender_id/receiver_id (UUIDs), not email
+    const senderChannel = supabase
+      .channel('messages-sent')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `sender_id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log('📨 Sent message update:', payload);
+          queryClient.invalidateQueries({ queryKey: ['messages'] });
+        }
+      )
+      .subscribe();
+
+    const receiverChannel = supabase
+      .channel('messages-received')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log('📨 Received message update:', payload);
+          
+          // Only show notifications for NEW messages (INSERT events)
+          if (payload.eventType === 'INSERT' && payload.new) {
+            const newMessage = payload.new as MessageType;
+            
+            // Find the sender
+            const sender = allUsers.find((u) => u.id === newMessage.sender_id);
+            const senderName = sender?.full_name || sender?.username || sender?.email || 'Someone';
+            const messagePreview = newMessage.content.substring(0, 50) + (newMessage.content.length > 50 ? '...' : '');
+            
+            // Play notification sound
+            const { playNotificationSound } = require('@/lib/notifications');
+            playNotificationSound();
+            
+            // Show in-app toast notification
+            toast.success(`💬 ${senderName}`, {
+              description: messagePreview,
+              duration: 5000,
+            });
+            
+            // Show browser notification if tab is not focused
+            if (document.hidden) {
+              const { showBrowserNotification } = require('@/lib/notifications');
+              const notification = showBrowserNotification(`New message from ${senderName}`, {
+                body: newMessage.content.substring(0, 100),
+                tag: 'message-notification',
+              });
+              
+              if (notification) {
+                // Click notification to focus the window
+                notification.onclick = () => {
+                  window.focus();
+                  notification.close();
+                };
+              }
+            }
+          }
+          
+          queryClient.invalidateQueries({ queryKey: ['messages'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(senderChannel);
+      supabase.removeChannel(receiverChannel);
+    };
+  }, [user?.id, queryClient, allUsers]);
+
   const { data: myRatings = [] } = useQuery<Rating[]>({
-    queryKey: ['myRatings', user?.email],
+    queryKey: ['myRatings', user?.id],
     queryFn: async () => {
-      if (!user) return [];
-      return await base44.entities.Rating.filter({ rater_email: user.email });
+      if (!user?.id) return [];
+      return await base44.entities.Rating.filter({ rater_user_id: user.id });
     },
-    enabled: !!user,
+    enabled: !!user?.id,
   });
 
+  // Mark messages as read when viewing them
   useEffect(() => {
-    if (user && allMessages.length > 0) {
-      const unreadMessages = allMessages.filter(
-        (m) => m.receiver_email === user.email && !m.is_read
-      );
+    if (!user?.id || !allMessages.length || !selectedUserEmail) return;
+    
+    // Find the other user by email
+    const otherUser = allUsers.find((u) => u.email === selectedUserEmail);
+    if (!otherUser) return;
+    
+    const unreadMessages = allMessages.filter(
+      (m) => m.receiver_id === user.id && 
+            m.sender_id === otherUser.id && 
+            !m.is_read
+    );
+    
+    // Only update if there are unread messages to avoid unnecessary updates
+    if (unreadMessages.length > 0) {
       unreadMessages.forEach((msg) => {
         base44.entities.Message.update(msg.id, { is_read: true });
       });
     }
-  }, [allMessages, user]);
+  }, [selectedUserEmail, user, allUsers, allMessages]); // Run when conversation or messages change
 
   const sendMessageMutation = useMutation({
     mutationFn: async ({ content, proof_url }: { content: string; proof_url?: string }) => {
+      // Find receiver by email
+      const receiver = allUsers.find((u) => u.email === selectedUserEmail);
+      if (!receiver) throw new Error("Receiver not found");
+      
       return await base44.entities.Message.create({
-        sender_email: user!.email,
-        receiver_email: selectedUserEmail!,
+        sender_id: user!.id,
+        receiver_id: receiver.id,
         content,
         proof_url: proof_url || null,
       });
@@ -120,14 +229,18 @@ function MessagesContent() {
 
   const submitRatingMutation = useMutation({
     mutationFn: async ({ completed, notes }: { completed: boolean; notes: string }) => {
+      // Find the user being rated by email
+      const ratedUser = allUsers.find((u) => u.email === selectedUserEmail);
+      if (!ratedUser) throw new Error("User not found");
+      
       const rating = await base44.entities.Rating.create({
-        rated_user_email: selectedUserEmail,
-        rater_email: user!.email,
+        rated_user_id: ratedUser.id,
+        rater_user_id: user!.id,
         completed_their_part: completed,
         notes: notes || '',
       });
 
-      const ratedUser = allUsers.find((u) => u.email === selectedUserEmail);
+      // Update the rated user's reputation
       if (ratedUser) {
         const currentScore = ratedUser.reputation_score || 100;
         const totalRatings = ratedUser.total_ratings || 0;
@@ -154,9 +267,16 @@ function MessagesContent() {
     },
   });
 
+  // Group messages by conversation (other user's email)
   const conversations: Record<string, MessageType[]> = {};
   allMessages.forEach((msg) => {
-    const otherEmail = msg.sender_email === user?.email ? msg.receiver_email : msg.sender_email;
+    // Find the other user's ID
+    const otherUserId = msg.sender_id === user?.id ? msg.receiver_id : msg.sender_id;
+    // Look up their email
+    const otherUser = allUsers.find((u) => u.id === otherUserId);
+    if (!otherUser) return;
+    
+    const otherEmail = otherUser.email;
     if (!conversations[otherEmail]) {
       conversations[otherEmail] = [];
     }
@@ -164,13 +284,13 @@ function MessagesContent() {
   });
 
   const conversationList = Object.keys(conversations).sort((a, b) => {
-    const lastMsgA = conversations[a][0].created_date;
-    const lastMsgB = conversations[b][0].created_date;
+    const lastMsgA = conversations[a][0].created_at;
+    const lastMsgB = conversations[b][0].created_at;
     return new Date(lastMsgB).getTime() - new Date(lastMsgA).getTime();
   });
 
   const currentConversation = selectedUserEmail ? (conversations[selectedUserEmail] || []).sort(
-    (a, b) => new Date(a.created_date).getTime() - new Date(b.created_date).getTime()
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   ) : [];
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -202,7 +322,9 @@ function MessagesContent() {
     setShowRatingDialog(true);
   };
 
-  const hasRatedUser = myRatings.some((r) => r.rated_user_email === selectedUserEmail);
+  // Check if user has already rated the selected user
+  const selectedUserObj = allUsers.find((u) => u.email === selectedUserEmail);
+  const hasRatedUser = selectedUserObj ? myRatings.some((r) => r.rated_user_id === selectedUserObj.id) : false;
   const selectedUser = allUsers.find((u) => u.email === selectedUserEmail);
 
   if (!user || isLoading) {
@@ -238,7 +360,7 @@ function MessagesContent() {
               const conv = conversations[email];
               const lastMsg = conv[0];
               const otherUser = allUsers.find((u) => u.email === email);
-              const unreadCount = conv.filter((m) => m.receiver_email === user.email && !m.is_read).length;
+              const unreadCount = conv.filter((m) => m.receiver_id === user.id && !m.is_read).length;
 
               return (
                 <button
@@ -329,7 +451,7 @@ function MessagesContent() {
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900">
               {currentConversation.map((msg, idx: number) => {
-                const isMe = msg.sender_email === user.email;
+                const isMe = msg.sender_id === user.id;
                 return (
                   <motion.div
                     key={msg.id}
@@ -356,7 +478,7 @@ function MessagesContent() {
                         </a>
                       )}
                       <p className={`text-xs mt-1 ${isMe ? 'text-emerald-100' : 'text-gray-500 dark:text-gray-400'}`}>
-                        {format(new Date(msg.created_date), 'h:mm a')}
+                        {format(new Date(msg.created_at), 'h:mm a')}
                       </p>
                     </div>
                   </motion.div>

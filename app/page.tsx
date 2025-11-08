@@ -262,18 +262,18 @@ export default function Home() {
             {filteredLinks.map((link: any) => {
               const owner = usersMap[link.user_id];
               return (
-                <ReferralCard
-                  key={link.id}
-                  link={link}
-                  onRequestExchange={handleRequestExchange}
-                  onStartChat={handleStartChat}
+              <ReferralCard
+                key={link.id}
+                link={link}
+                onRequestExchange={handleRequestExchange}
+                onStartChat={handleStartChat}
                   ownerEmail={owner?.email}
                   ownerName={owner?.full_name}
                   ownerUsername={owner?.username}
                   ownerReputation={owner?.reputation_score}
                   ownerRatingsCount={owner?.total_ratings}
                   lastActive={owner?.last_active}
-                />
+              />
               );
             })}
           </div>

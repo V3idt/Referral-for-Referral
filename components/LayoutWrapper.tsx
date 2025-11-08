@@ -19,25 +19,27 @@ import {
 } from "@/components/ui/sidebar";
 import { base44 } from "@/lib/base44Client";
 import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase/client";
+import { toast } from "sonner";
 
 const getNavigationItems = (isAdmin: boolean) => {
   const items = [
-    {
-      title: "Browse Links",
+  {
+    title: "Browse Links",
       url: "/",
-      icon: Home,
-    },
-    {
-      title: "My Links",
+    icon: Home,
+  },
+  {
+    title: "My Links",
       url: "/my-links",
-      icon: Link2,
-    },
-    {
-      title: "Messages",
+    icon: Link2,
+  },
+  {
+    title: "Messages",
       url: "/messages",
-      icon: MessageSquare,
-    },
+    icon: MessageSquare,
+  },
     {
       title: "Profile",
       url: "/profile",
@@ -97,6 +99,8 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
     }
   }, [darkMode, mounted]);
 
+  const queryClient = useQueryClient();
+
   const { data: unreadCount = 0 } = useQuery({
     queryKey: ['unreadMessages', user?.email],
     queryFn: async () => {
@@ -108,8 +112,85 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
       return messages.length;
     },
     enabled: !!user,
-    refetchInterval: 10000,
+    refetchOnWindowFocus: false, // Disabled - using realtime instead
   });
+
+  // Fetch all users for notification sender names
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['allUsers'],
+    queryFn: () => base44.entities.User.list(),
+    enabled: !!user,
+  });
+
+  // Request notification permission on mount
+  React.useEffect(() => {
+    const { requestNotificationPermission } = require('@/lib/notifications');
+    requestNotificationPermission();
+  }, []);
+
+  // Real-time updates for unread message count with notifications
+  React.useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('unread-messages')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${user.id}`, // Using UUID, not email
+        },
+        async (payload) => {
+          // Update unread count when any message for this user changes
+          queryClient.invalidateQueries({ queryKey: ['unreadMessages'] });
+          
+          // Show notification for NEW messages (only when not on messages page)
+          if (payload.eventType === 'INSERT' && payload.new && !window.location.pathname.includes('/messages')) {
+            const newMessage = payload.new as any;
+            
+            // Fetch sender info
+            const sender = allUsers.find((u: any) => u.id === newMessage.sender_id);
+            const senderName = sender?.full_name || sender?.username || sender?.email || 'Someone';
+            const messagePreview = newMessage.content.substring(0, 50) + (newMessage.content.length > 50 ? '...' : '');
+            
+            // Play notification sound
+            const { playNotificationSound, showBrowserNotification } = require('@/lib/notifications');
+            playNotificationSound();
+            
+            // Show in-app toast notification
+            toast.success(`💬 ${senderName}`, {
+              description: messagePreview,
+              duration: 5000,
+              action: {
+                label: 'View',
+                onClick: () => window.location.href = '/messages',
+              },
+            });
+            
+            // Show browser notification
+            const notification = showBrowserNotification(`New message from ${senderName}`, {
+              body: newMessage.content.substring(0, 100),
+              tag: 'message-notification',
+            });
+            
+            if (notification) {
+              // Click notification to go to messages
+              notification.onclick = () => {
+                window.location.href = '/messages';
+                notification.close();
+              };
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, queryClient, allUsers]);
 
   return (
     <SidebarProvider>
@@ -145,8 +226,17 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
           <SidebarHeader className="border-b border-gray-200/50 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <Link2 className="w-5 h-5 text-white" />
+                <div className="w-10 h-10 rounded-xl shadow-lg">
+                  <svg width="40" height="40" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="32" height="32" rx="8" fill="url(#gradient)"/>
+                    <path d="M14 10C14 9.44772 13.5523 9 13 9C12.4477 9 12 9.44772 12 10V11C12 11.5523 11.5523 12 11 12H10C9.44772 12 9 12.4477 9 13C9 13.5523 9.44772 14 10 14H11C11.5523 14 12 14.4477 12 15V22C12 22.5523 12.4477 23 13 23C13.5523 23 14 22.5523 14 22V15C14 14.4477 14.4477 14 15 14H17C17.5523 14 18 14.4477 18 15V22C18 22.5523 18.4477 23 19 23C19.5523 23 20 22.5523 20 22V15C20 14.4477 20.4477 14 21 14H22C22.5523 14 23 13.5523 23 13C23 12.4477 22.5523 12 22 12H21C20.4477 12 20 11.5523 20 11V10C20 9.44772 19.5523 9 19 9C18.4477 9 18 9.44772 18 10V11C18 11.5523 17.5523 12 17 12H15C14.4477 12 14 11.5523 14 11V10Z" fill="white"/>
+                    <defs>
+                      <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                        <stop stopColor="#10B981"/>
+                        <stop offset="1" stopColor="#0D9488"/>
+                      </linearGradient>
+                    </defs>
+                  </svg>
                 </div>
                 <div>
                   <h2 className="font-bold text-gray-900 dark:text-white text-lg">Referral-for-Referral</h2>
@@ -213,21 +303,21 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
           <SidebarFooter className="border-t border-gray-200/50 dark:border-gray-700 p-4">
             {user ? (
               <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center">
-                    <span className="text-white font-semibold text-sm">
-                      {user.full_name?.charAt(0) || user.email?.charAt(0)}
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center">
+                  <span className="text-white font-semibold text-sm">
+                    {user.full_name?.charAt(0) || user.email?.charAt(0)}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-gray-900 dark:text-white text-sm truncate">{user.full_name || 'User'}</p>
+                  <div className="flex items-center gap-2">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">@{user.username || user.email?.split('@')[0]}</p>
+                    <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                      {user.reputation_score || 100}★
                     </span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 dark:text-white text-sm truncate">{user.full_name || 'User'}</p>
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">@{user.username || user.email?.split('@')[0]}</p>
-                      <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                        {user.reputation_score || 100}★
-                      </span>
-                    </div>
-                  </div>
+                </div>
                 </div>
                 <Button
                   variant="outline"

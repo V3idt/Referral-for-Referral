@@ -37,7 +37,7 @@ export default function ReferralCard({
   ownerName,
   ownerUsername,
   ownerReputation, 
-  ownerRatingsCount,
+  ownerRatingsCount, 
   lastActive,
 }: ReferralCardProps) {
   const isNewUser = (ownerRatingsCount || 0) < 3;
@@ -100,7 +100,7 @@ export default function ReferralCard({
               <div className="relative">
                 <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white font-bold text-lg shadow-md`}>
                   {getInitials()}
-                </div>
+                  </div>
                 {/* Online Status Indicator */}
                 <TooltipProvider>
                   <Tooltip>
@@ -148,7 +148,7 @@ export default function ReferralCard({
                   )}
                   
                   {/* Online Status Badge */}
-                  <span>•</span>
+                      <span>•</span>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>

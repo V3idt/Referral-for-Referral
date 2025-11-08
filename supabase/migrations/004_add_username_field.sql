@@ -1,7 +1,7 @@
 -- Add username field and make it unique
 
 -- 1. Add username column (separate from full_name)
-ALTER TABLE public.users
+ALTER TABLE public.users 
 ADD COLUMN IF NOT EXISTS username TEXT UNIQUE;
 
 -- 2. Create index for faster username lookups
@@ -9,7 +9,7 @@ CREATE INDEX IF NOT EXISTS idx_users_username ON public.users(username);
 
 -- 3. Migrate existing full_name data to username (if any)
 -- This converts full_name to lowercase username for existing users
-UPDATE public.users
+UPDATE public.users 
 SET username = LOWER(REGEXP_REPLACE(full_name, '[^a-zA-Z0-9]', '', 'g'))
 WHERE username IS NULL AND full_name IS NOT NULL;
 
