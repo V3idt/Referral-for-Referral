@@ -45,6 +45,24 @@ export interface Message {
   proof_url?: string | null;
   is_read: boolean;
   created_at: string;
+  metadata?: {
+    type?: 'exchange_request' | 'exchange_update' | 'proof_request' | 'regular';
+    exchange_id?: string;
+    requester_link_id?: string;
+    provider_link_id?: string;
+    requester_link_name?: string;
+    provider_link_name?: string;
+    requester_link_url?: string;
+    provider_link_url?: string;
+    exchange_status?: 'pending' | 'accepted' | 'completed' | 'cancelled';
+    actions?: Array<{
+      type: 'accept' | 'decline' | 'send_proof' | 'mark_complete';
+      label: string;
+      variant?: 'default' | 'destructive' | 'outline';
+    }>;
+    proof_sent_by_requester?: boolean;
+    proof_sent_by_provider?: boolean;
+  };
 }
 
 export interface Rating {

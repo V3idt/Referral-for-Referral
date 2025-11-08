@@ -1,0 +1,225 @@
+"use client";
+
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { CheckCircle2, XCircle, Upload, ImageIcon } from "lucide-react";
+import { base44 } from "@/lib/base44Client";
+import { toast } from "sonner";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
+import type { Message } from "@/types";
+
+interface MessageActionsProps {
+  message: Message;
+  currentUserId: string;
+}
+
+export function MessageActions({ message, currentUserId }: MessageActionsProps) {
+  const queryClient = useQueryClient();
+  const [uploading, setUploading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+
+  const metadata = message.metadata;
+  if (!metadata || !metadata.actions || metadata.actions.length === 0) {
+    return null;
+  }
+
+  // Handle Accept Exchange
+  const handleAccept = async () => {
+    if (!metadata.exchange_id) return;
+
+    try {
+      await base44.entities.Exchange.update(metadata.exchange_id, { status: 'accepted' });
+      
+      // Send acceptance message to requester
+      await base44.entities.Message.create({
+        sender_id: currentUserId,
+        receiver_id: message.sender_id,
+        content: `**Exchange Accepted ✅**\n\nYour exchange request has been accepted!\n\nYou can now use each other's referral links. When you're done, send a screenshot as proof using the button below.`,
+        is_read: false,
+        metadata: {
+          type: 'exchange_update',
+          exchange_id: metadata.exchange_id,
+          exchange_status: 'accepted',
+          actions: [
+            {
+              type: 'send_proof',
+              label: 'Send Proof Screenshot',
+              variant: 'default'
+            }
+          ]
+        }
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
+      queryClient.invalidateQueries({ queryKey: ['exchanges'] });
+      toast.success("Exchange accepted! You can now complete it.");
+    } catch (error) {
+      toast.error("Failed to accept exchange");
+    }
+  };
+
+  // Handle Decline Exchange
+  const handleDecline = async () => {
+    if (!metadata.exchange_id) return;
+
+    try {
+      await base44.entities.Exchange.update(metadata.exchange_id, { status: 'cancelled' });
+      
+      // Send cancellation message to requester
+      await base44.entities.Message.create({
+        sender_id: currentUserId,
+        receiver_id: message.sender_id,
+        content: `**Exchange Declined ❌**\n\nYour exchange request was declined.`,
+        is_read: false,
+        metadata: {
+          type: 'exchange_update',
+          exchange_id: metadata.exchange_id,
+          exchange_status: 'cancelled'
+        }
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
+      queryClient.invalidateQueries({ queryKey: ['exchanges'] });
+      toast.success("Exchange declined");
+    } catch (error) {
+      toast.error("Failed to decline exchange");
+    }
+  };
+
+  // Handle Send Proof Screenshot
+  const handleSendProof = async () => {
+    if (!imageFile) {
+      toast.error("Please select an image first");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      // Upload image to Supabase Storage
+      const fileExt = imageFile.name.split('.').pop();
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
+      const filePath = `proof/${fileName}`;
+
+      const { error: uploadError } = await base44.storage.upload(filePath, imageFile);
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = base44.storage.getPublicUrl(filePath);
+
+      // Send proof message to the other person
+      await base44.entities.Message.create({
+        sender_id: currentUserId,
+        receiver_id: message.sender_id,
+        content: `**Proof Screenshot Sent 📸**\n\nI've completed my part and attached a screenshot as proof!\n\nPlease review it and send your proof screenshot as well.`,
+        is_read: false,
+        proof_url: publicUrl,
+        metadata: {
+          type: 'proof_request',
+          exchange_id: metadata.exchange_id,
+          proof_sent_by_requester: message.receiver_id === currentUserId,
+          proof_sent_by_provider: message.sender_id === currentUserId,
+          actions: [
+            {
+              type: 'send_proof',
+              label: 'Send My Proof Screenshot',
+              variant: 'default'
+            }
+          ]
+        }
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
+      toast.success("Proof screenshot sent!");
+      setImageFile(null);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to upload proof");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const getActionButton = (action: any) => {
+    const variantMap = {
+      default: 'default' as const,
+      destructive: 'destructive' as const,
+      outline: 'outline' as const,
+    };
+    const variant = variantMap[action.variant] || 'default';
+
+    switch (action.type) {
+      case 'accept':
+        return (
+          <Button
+            key={action.type}
+            onClick={handleAccept}
+            variant={variant}
+            size="sm"
+            className="flex-1 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white"
+          >
+            <CheckCircle2 className="w-4 h-4 mr-2" />
+            {action.label}
+          </Button>
+        );
+
+      case 'decline':
+        return (
+          <Button
+            key={action.type}
+            onClick={handleDecline}
+            variant={variant}
+            size="sm"
+            className="flex-1 bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 text-white"
+          >
+            <XCircle className="w-4 h-4 mr-2" />
+            {action.label}
+          </Button>
+        );
+
+      case 'send_proof':
+        return (
+          <div key={action.type} className="flex flex-col gap-2 w-full">
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                asChild
+              >
+                <span>
+                  <ImageIcon className="w-4 h-4 mr-2" />
+                  {imageFile ? imageFile.name : 'Choose Image'}
+                </span>
+              </Button>
+            </label>
+            {imageFile && (
+              <Button
+                onClick={handleSendProof}
+                disabled={uploading}
+                size="sm"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                {uploading ? 'Uploading...' : action.label}
+              </Button>
+            )}
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+      {metadata.actions.map((action) => getActionButton(action))}
+    </div>
+  );
+}

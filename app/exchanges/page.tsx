@@ -26,12 +26,14 @@ const statusConfig: any = {
   cancelled: { color: "bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800", icon: XCircle, label: "Cancelled" },
 };
 
-function ExchangeCard({ exchange, myEmail, onUpdateStatus, isUpdating }: any) {
+function ExchangeCard({ exchange, myUserId, allUsers, onUpdateStatus, isUpdating }: any) {
   const [requesterLink, setRequesterLink] = useState<any>(null);
   const [providerLink, setProviderLink] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  const isRequester = exchange.requester_email === myEmail;
+  const isRequester = exchange.requester_user_id === myUserId;
+  const requesterUser = allUsers.find((u: any) => u.id === exchange.requester_user_id);
+  const providerUser = allUsers.find((u: any) => u.id === exchange.provider_user_id);
   const StatusIcon = statusConfig[exchange.status].icon;
 
   useEffect(() => {
@@ -79,7 +81,9 @@ function ExchangeCard({ exchange, myEmail, onUpdateStatus, isUpdating }: any) {
             </Badge>
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {isRequester ? `With ${exchange.provider_email}` : `From ${exchange.requester_email}`}
+            {isRequester 
+              ? `With ${providerUser?.full_name || providerUser?.username || providerUser?.email || 'Unknown'}` 
+              : `From ${requesterUser?.full_name || requesterUser?.username || requesterUser?.email || 'Unknown'}`}
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -168,23 +172,82 @@ export default function Exchanges() {
     loadUser();
   }, []);
 
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['allUsers'],
+    queryFn: () => base44.entities.User.list(),
+  });
+
   const { data: exchanges = [], isLoading } = useQuery({
-    queryKey: ['exchanges', user?.email],
+    queryKey: ['exchanges', user?.id],
     queryFn: async () => {
-      if (!user) return [];
+      if (!user?.id) return [];
       const [asRequester, asProvider] = await Promise.all([
-        base44.entities.Exchange.filter({ requester_email: user.email }, '-created_date'),
-        base44.entities.Exchange.filter({ provider_email: user.email }, '-created_date'),
+        base44.entities.Exchange.filter({ requester_user_id: user.id }),
+        base44.entities.Exchange.filter({ provider_user_id: user.id }),
       ]);
-      return [...asRequester, ...asProvider];
+      return [...asRequester, ...asProvider].sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
     },
-    enabled: !!user,
+    enabled: !!user?.id,
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }: any) => base44.entities.Exchange.update(id, { status }),
+    mutationFn: async ({ id, status }: any) => {
+      // Update the exchange status
+      const updatedExchange = await base44.entities.Exchange.update(id, { status });
+      
+      // Find the exchange details
+      const exchange = exchanges.find((e: any) => e.id === id);
+      if (!exchange) return updatedExchange;
+      
+      // Determine who to notify (the other person)
+      const isRequester = exchange.requester_user_id === user?.id;
+      const recipientId = isRequester ? exchange.provider_user_id : exchange.requester_user_id;
+      const recipient = allUsers.find((u: any) => u.id === recipientId);
+      
+      // Send notification messages for status changes
+      let messageContent = '';
+      let metadata: any = {
+        type: 'exchange_update',
+        exchange_id: id,
+        exchange_status: status
+      };
+      
+      if (status === 'accepted') {
+        const senderName = user?.full_name || user?.username || user?.email;
+        messageContent = `**Exchange Accepted ✅**\n\n${senderName} has accepted your exchange request!\n\nYou can now use each other's referral links. When you're done, send a screenshot as proof using the button below.`;
+        
+        // Add "Send Proof" action for the requester
+        metadata.actions = [
+          {
+            type: 'send_proof',
+            label: 'Send Proof Screenshot',
+            variant: 'default'
+          }
+        ];
+      } else if (status === 'completed') {
+        messageContent = `**Exchange Completed 🎉**\n\n${user?.full_name || user?.username || user?.email} marked the exchange as completed!\n\nDon't forget to rate each other on the Messages page.`;
+      } else if (status === 'cancelled') {
+        messageContent = `**Exchange Cancelled ❌**\n\n${user?.full_name || user?.username || user?.email} cancelled the exchange.`;
+      }
+      
+      // Send the notification message
+      if (messageContent && recipientId) {
+        await base44.entities.Message.create({
+          sender_id: user.id,
+          receiver_id: recipientId,
+          content: messageContent,
+          is_read: false,
+          metadata
+        });
+      }
+      
+      return updatedExchange;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exchanges'] });
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
       toast.success("Exchange updated successfully");
     },
     onError: () => {
@@ -242,7 +305,8 @@ export default function Exchanges() {
                 <ExchangeCard
                   key={exchange.id}
                   exchange={exchange}
-                  myEmail={user.email}
+                  myUserId={user.id}
+                  allUsers={allUsers}
                   onUpdateStatus={(id: string, status: string) => updateStatusMutation.mutate({ id, status })}
                   isUpdating={updateStatusMutation.isPending}
                 />
@@ -263,7 +327,8 @@ export default function Exchanges() {
                 <ExchangeCard
                   key={exchange.id}
                   exchange={exchange}
-                  myEmail={user.email}
+                  myUserId={user.id}
+                  allUsers={allUsers}
                   onUpdateStatus={(id: string, status: string) => updateStatusMutation.mutate({ id, status })}
                   isUpdating={updateStatusMutation.isPending}
                 />
@@ -284,7 +349,8 @@ export default function Exchanges() {
                 <ExchangeCard
                   key={exchange.id}
                   exchange={exchange}
-                  myEmail={user.email}
+                  myUserId={user.id}
+                  allUsers={allUsers}
                   onUpdateStatus={(id: string, status: string) => updateStatusMutation.mutate({ id, status })}
                   isUpdating={updateStatusMutation.isPending}
                 />

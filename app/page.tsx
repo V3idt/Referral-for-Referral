@@ -59,17 +59,55 @@ export default function Home() {
         throw new Error("Please sign in to request exchanges");
       }
 
-      return await base44.entities.Exchange.create({
+      // Create the exchange
+      const exchange = await base44.entities.Exchange.create({
         requester_link_id: requesterLink.id,
         provider_link_id: providerLink.id,
-        requester_email: user.email,
-        provider_email: providerLink.created_by,
+        requester_user_id: user.id,
+        provider_user_id: providerLink.user_id,
         status: 'pending',
         notes: notes || '',
       });
+
+      // Send a professional notification message to the provider with action buttons
+      const requesterName = user.full_name || user.username || user.email;
+      const messageContent = `**New Exchange Request**\n\n${requesterName} wants to swap referral links with you!\n\n**📋 Exchange Details:**\n• Their link: ${requesterLink.service_name}\n• Your link: ${providerLink.service_name}${notes ? `\n• Message: "${notes}"` : ''}\n\n**🔗 Links:**\n• Their referral: ${requesterLink.referral_url}\n• Your referral: ${providerLink.referral_url}\n\nUse the buttons below to accept or decline this request.`;
+
+      await base44.entities.Message.create({
+        sender_id: user.id,
+        receiver_id: providerLink.user_id,
+        content: messageContent,
+        is_read: false,
+        metadata: {
+          type: 'exchange_request',
+          exchange_id: exchange.id,
+          requester_link_id: requesterLink.id,
+          provider_link_id: providerLink.id,
+          requester_link_name: requesterLink.service_name,
+          provider_link_name: providerLink.service_name,
+          requester_link_url: requesterLink.referral_url,
+          provider_link_url: providerLink.referral_url,
+          exchange_status: 'pending',
+          actions: [
+            {
+              type: 'accept',
+              label: 'Accept Exchange',
+              variant: 'default'
+            },
+            {
+              type: 'decline',
+              label: 'Decline',
+              variant: 'destructive'
+            }
+          ]
+        }
+      });
+
+      return exchange;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exchanges'] });
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
       toast.success("Exchange request sent! Check your messages.");
       setShowExchangeDialog(false);
       setSelectedLink(null);
@@ -139,17 +177,6 @@ export default function Home() {
     }
     setSelectedLink(link);
     setShowExchangeDialog(true);
-  };
-
-  const handleStartChat = async (link: any) => {
-    if (!user) {
-      base44.auth.redirectToLogin();
-      return;
-    }
-    const owner = usersMap[link.user_id];
-    if (owner?.email) {
-      router.push(`/messages?with=${owner.email}`);
-    }
   };
 
   const onlineCount = Object.values(usersMap).filter((u: any) => {
@@ -266,13 +293,12 @@ export default function Home() {
                 key={link.id}
                 link={link}
                 onRequestExchange={handleRequestExchange}
-                onStartChat={handleStartChat}
-                  ownerEmail={owner?.email}
-                  ownerName={owner?.full_name}
-                  ownerUsername={owner?.username}
-                  ownerReputation={owner?.reputation_score}
-                  ownerRatingsCount={owner?.total_ratings}
-                  lastActive={owner?.last_active}
+                ownerEmail={owner?.email}
+                ownerName={owner?.full_name}
+                ownerUsername={owner?.username}
+                ownerReputation={owner?.reputation_score}
+                ownerRatingsCount={owner?.total_ratings}
+                lastActive={owner?.last_active}
               />
               );
             })}

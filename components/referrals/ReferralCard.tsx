@@ -4,7 +4,7 @@ import React from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, Gift, Handshake, MessageSquare, Star, Shield } from "lucide-react";
+import { ExternalLink, Gift, Handshake, Star, Shield } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import {
@@ -18,7 +18,6 @@ import { getAvatarColor } from "@/lib/utils";
 interface ReferralCardProps {
   link: any;
   onRequestExchange?: (link: any) => void;
-  onStartChat?: (link: any) => void;
   showActions?: boolean;
   ownerEmail?: string;
   ownerName?: string;
@@ -31,7 +30,6 @@ interface ReferralCardProps {
 export default function ReferralCard({ 
   link, 
   onRequestExchange, 
-  onStartChat, 
   showActions = true, 
   ownerEmail, 
   ownerName,
@@ -218,21 +216,12 @@ export default function ReferralCard({
               Link
             </Button>
             <Button
-              variant="outline"
-              size="sm"
-              className="flex-1 dark:border-gray-600 dark:text-gray-300"
-              onClick={() => onStartChat?.(link)}
-            >
-              <MessageSquare className="w-3 h-3 mr-2" />
-              Chat
-            </Button>
-            <Button
               size="sm"
               className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-md"
               onClick={() => onRequestExchange?.(link)}
             >
               <Handshake className="w-3 h-3 mr-2" />
-              Swap
+              Request Swap
             </Button>
           </CardFooter>
         )}

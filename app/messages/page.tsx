@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { MessageActions } from "@/components/messages/MessageActions";
 import { 
   Send, 
   Loader2, 
@@ -461,7 +462,7 @@ function MessagesContent() {
                     className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
                   >
                     <div className={`max-w-md ${isMe ? 'bg-emerald-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white'} rounded-2xl px-4 py-3 shadow-sm`}>
-                      <p className="text-sm">{msg.content}</p>
+                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                       {msg.proof_url && (
                         <a 
                           href={msg.proof_url} 
@@ -477,6 +478,8 @@ function MessagesContent() {
                           />
                         </a>
                       )}
+                      {/* Action buttons for exchange requests */}
+                      {!isMe && msg.metadata && <MessageActions message={msg} currentUserId={user.id} />}
                       <p className={`text-xs mt-1 ${isMe ? 'text-emerald-100' : 'text-gray-500 dark:text-gray-400'}`}>
                         {format(new Date(msg.created_at), 'h:mm a')}
                       </p>
