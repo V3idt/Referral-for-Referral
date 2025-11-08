@@ -504,6 +504,7 @@ export const storage = {
 // Export combined API object for compatibility
 export const api = {
   auth,
+  storage,
   entities: {
     ReferralLink: referralLinks,
     Exchange: exchanges,

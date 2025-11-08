@@ -319,9 +319,7 @@ function MessagesContent() {
     }
   };
 
-  const handleRateUser = () => {
-    setShowRatingDialog(true);
-  };
+  // Removed handleRateUser - using direct rating buttons now
 
   // Check if user has already rated the selected user
   const selectedUserObj = allUsers.find((u) => u.email === selectedUserEmail);
@@ -437,14 +435,38 @@ function MessagesContent() {
                   </div>
                 </div>
                 {!hasRatedUser && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleRateUser}
-                    className="dark:border-gray-600"
-                  >
-                    Rate User
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        ratingMutation.mutate({
+                          userEmail: selectedUserEmail!,
+                          completed: true,
+                          notes: "Completed their part of the exchange"
+                        });
+                      }}
+                      className="dark:border-gray-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-500 dark:hover:border-emerald-500"
+                    >
+                      <ThumbsUp className="w-4 h-4 mr-1" />
+                      Completed
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        ratingMutation.mutate({
+                          userEmail: selectedUserEmail!,
+                          completed: false,
+                          notes: "Did not complete their part of the exchange"
+                        });
+                      }}
+                      className="dark:border-gray-600 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-500 dark:hover:border-red-500"
+                    >
+                      <ThumbsDown className="w-4 h-4 mr-1" />
+                      Incomplete
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>

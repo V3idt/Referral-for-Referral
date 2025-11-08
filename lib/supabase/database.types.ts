@@ -131,6 +131,7 @@ export interface Database {
           proof_url: string | null;
           is_read: boolean;
           created_at: string;
+          metadata: any;
         };
         Insert: {
           id?: string;
@@ -140,6 +141,7 @@ export interface Database {
           proof_url?: string | null;
           is_read?: boolean;
           created_at?: string;
+          metadata?: any;
         };
         Update: {
           id?: string;
@@ -149,6 +151,7 @@ export interface Database {
           proof_url?: string | null;
           is_read?: boolean;
           created_at?: string;
+          metadata?: any;
         };
       };
       ratings: {

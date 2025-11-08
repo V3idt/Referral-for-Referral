@@ -69,9 +69,16 @@ export default function Home() {
         notes: notes || '',
       });
 
-      // Send a professional notification message to the provider with action buttons
+      // ═══════════════════════════════════════════════════════════════════
+      // 📝 SWAP REQUEST MESSAGE - EDIT THIS TO CUSTOMIZE THE MESSAGE
+      // ═══════════════════════════════════════════════════════════════════
+      // This is the message sent when someone requests a referral link exchange.
+      // You can customize the text, emojis, formatting, and structure here.
+      
       const requesterName = user.full_name || user.username || user.email;
-      const messageContent = `**New Exchange Request**\n\n${requesterName} wants to swap referral links with you!\n\n**📋 Exchange Details:**\n• Their link: ${requesterLink.service_name}\n• Your link: ${providerLink.service_name}${notes ? `\n• Message: "${notes}"` : ''}\n\n**🔗 Links:**\n• Their referral: ${requesterLink.referral_url}\n• Your referral: ${providerLink.referral_url}\n\nUse the buttons below to accept or decline this request.`;
+      const messageContent = `New Exchange Request\n\n${requesterName} wants to swap referral links with you!\n\nExchange Details:\n• Their link: ${requesterLink.service_name}\n• Your link: ${providerLink.service_name}${notes ? `\n• Message: "${notes}"` : ''}\n\n🔗 Links:\n• Their referral: ${requesterLink.referral_url}\n• Your referral: ${providerLink.referral_url}\n\nUse the buttons below to accept or decline this request.`;
+      
+      // ═══════════════════════════════════════════════════════════════════
 
       await base44.entities.Message.create({
         sender_id: user.id,

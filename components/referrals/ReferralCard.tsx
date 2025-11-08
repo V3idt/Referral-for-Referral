@@ -130,6 +130,7 @@ export default function ReferralCard({
                       <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
                         <Star className="w-3 h-3 fill-current" />
                         {ownerReputation}
+                        <span className="text-xs">Trust</span>
                       </div>
                     </>
                   )}
