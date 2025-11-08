@@ -29,8 +29,8 @@ export default function MyLinks() {
   }, []);
 
   const { data: myLinks = [], isLoading } = useQuery({
-    queryKey: ['myReferralLinks', user?.email],
-    queryFn: () => user ? base44.entities.ReferralLink.filter({ created_by: user.email }, '-created_date') : [],
+    queryKey: ['myReferralLinks', user?.id],
+    queryFn: () => user ? base44.entities.ReferralLink.filter({ user_id: user.id }, '-created_at') : [],
     enabled: !!user,
   });
 

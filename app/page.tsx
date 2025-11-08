@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { createPageUrl } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -37,7 +36,7 @@ export default function Home() {
 
   const { data: allLinks = [], isLoading } = useQuery({
     queryKey: ['referralLinks'],
-    queryFn: () => base44.entities.ReferralLink.filter({ status: 'active' }, '-created_date'),
+    queryFn: () => base44.entities.ReferralLink.filter({ status: 'active' }, '-created_at'),
   });
 
   const { data: allUsers = [] } = useQuery({
@@ -48,7 +47,8 @@ export default function Home() {
   const usersMap = React.useMemo(() => {
     const map: any = {};
     allUsers.forEach((u: any) => {
-      map[u.email] = u;
+      map[u.id] = u;
+      map[u.email] = u; // Keep email mapping for compatibility
     });
     return map;
   }, [allUsers]);
@@ -91,36 +91,45 @@ export default function Home() {
     return true;
   };
 
-  const isUserOnline = (userEmail: string) => {
-    const userData = usersMap[userEmail];
-    if (!userData?.last_active) return false;
+  const getUserOnlineStatus = (userId: string) => {
+    const userData = usersMap[userId];
+    if (!userData?.last_active) return 'offline';
     const lastActive = new Date(userData.last_active);
     const now = new Date();
-    return (now.getTime() - lastActive.getTime()) < 5 * 60 * 1000;
+    const diffMinutes = Math.floor((now.getTime() - lastActive.getTime()) / (1000 * 60));
+    
+    if (diffMinutes <= 5) return 'online';
+    if (diffMinutes <= 30) return 'recent';
+    return 'offline';
   };
 
   const filteredLinks = allLinks.filter((link: any) => {
     const matchesSearch = link.service_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          link.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const notMine = !user || link.created_by !== user.email;
+    const notMine = !user || link.user_id !== user.id;
     const matchesDate = filterByDate(link);
     
-    const ownerUser = usersMap[link.created_by];
+    const ownerUser = usersMap[link.user_id];
     const reputation = ownerUser?.reputation_score || 100;
     const matchesTrust = reputation >= parseInt(minTrustScore);
     
     return matchesSearch && notMine && matchesDate && matchesTrust;
   }).sort((a: any, b: any) => {
-    const aOnline = isUserOnline(a.created_by);
-    const bOnline = isUserOnline(b.created_by);
-    if (aOnline && !bOnline) return -1;
-    if (!aOnline && bOnline) return 1;
+    // Sort by online status first (online > recent > offline)
+    const aStatus = getUserOnlineStatus(a.user_id);
+    const bStatus = getUserOnlineStatus(b.user_id);
+    const statusOrder = { online: 3, recent: 2, offline: 1 };
+    if (statusOrder[aStatus as keyof typeof statusOrder] !== statusOrder[bStatus as keyof typeof statusOrder]) {
+      return statusOrder[bStatus as keyof typeof statusOrder] - statusOrder[aStatus as keyof typeof statusOrder];
+    }
     
-    const aReputation = usersMap[a.created_by]?.reputation_score || 100;
-    const bReputation = usersMap[b.created_by]?.reputation_score || 100;
+    // Then sort by reputation
+    const aReputation = usersMap[a.user_id]?.reputation_score || 100;
+    const bReputation = usersMap[b.user_id]?.reputation_score || 100;
     if (aReputation !== bReputation) return bReputation - aReputation;
     
-    return new Date(b.created_date).getTime() - new Date(a.created_date).getTime();
+    // Finally sort by date
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
 
   const handleRequestExchange = (link: any) => {
@@ -137,10 +146,16 @@ export default function Home() {
       base44.auth.redirectToLogin();
       return;
     }
-    router.push(createPageUrl("Messages") + `?with=${link.created_by}`);
+    const owner = usersMap[link.user_id];
+    if (owner?.email) {
+      router.push(`/messages?with=${owner.email}`);
+    }
   };
 
-  const onlineCount = Object.values(usersMap).filter((u: any) => isUserOnline(u.email)).length;
+  const onlineCount = Object.values(usersMap).filter((u: any) => {
+    const status = getUserOnlineStatus((u as any).id);
+    return status === 'online';
+  }).length;
 
   return (
     <div className="min-h-screen">
@@ -244,18 +259,23 @@ export default function Home() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredLinks.map((link: any) => (
-              <ReferralCard
-                key={link.id}
-                link={link}
-                onRequestExchange={handleRequestExchange}
-                onStartChat={handleStartChat}
-                ownerEmail={link.created_by}
-                ownerReputation={usersMap[link.created_by]?.reputation_score}
-                ownerRatingsCount={usersMap[link.created_by]?.total_ratings}
-                isOnline={isUserOnline(link.created_by)}
-              />
-            ))}
+            {filteredLinks.map((link: any) => {
+              const owner = usersMap[link.user_id];
+              return (
+                <ReferralCard
+                  key={link.id}
+                  link={link}
+                  onRequestExchange={handleRequestExchange}
+                  onStartChat={handleStartChat}
+                  ownerEmail={owner?.email}
+                  ownerName={owner?.full_name}
+                  ownerUsername={owner?.username}
+                  ownerReputation={owner?.reputation_score}
+                  ownerRatingsCount={owner?.total_ratings}
+                  lastActive={owner?.last_active}
+                />
+              );
+            })}
           </div>
         )}
       </div>

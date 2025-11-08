@@ -32,6 +32,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { useSearchParams } from "next/navigation";
 import type { User, Message as MessageType, Rating } from "@/types";
+import { getAvatarColor } from "@/lib/utils";
 
 function MessagesContent() {
   const searchParams = useSearchParams();
@@ -249,7 +250,7 @@ function MessagesContent() {
                 >
                   <div className="flex items-start gap-3">
                     <Avatar className="w-10 h-10 shrink-0">
-                      <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-500 text-white">
+                      <AvatarFallback className={`bg-gradient-to-br ${getAvatarColor(otherUser?.full_name || otherUser?.username || email)} text-white`}>
                         {email.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
@@ -293,7 +294,7 @@ function MessagesContent() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Avatar className="w-10 h-10">
-                    <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-500 text-white">
+                    <AvatarFallback className={`bg-gradient-to-br ${getAvatarColor(selectedUser?.full_name || selectedUser?.username || selectedUserEmail)} text-white`}>
                       {selectedUserEmail.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>

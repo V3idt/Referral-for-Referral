@@ -3,8 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { createPageUrl } from "@/lib/utils";
-import { Home, Link2, MessageSquare, Plus, Menu, Moon, Sun, Shield } from "lucide-react";
+import { Home, Link2, MessageSquare, Plus, Menu, Moon, Sun, Shield, User as UserIcon, LogOut } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -26,18 +25,23 @@ const getNavigationItems = (isAdmin: boolean) => {
   const items = [
     {
       title: "Browse Links",
-      url: createPageUrl("Home"),
+      url: "/",
       icon: Home,
     },
     {
       title: "My Links",
-      url: createPageUrl("MyLinks"),
+      url: "/my-links",
       icon: Link2,
     },
     {
       title: "Messages",
-      url: createPageUrl("Messages"),
+      url: "/messages",
       icon: MessageSquare,
+    },
+    {
+      title: "Profile",
+      url: "/profile",
+      icon: UserIcon,
     },
   ];
 
@@ -197,7 +201,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
             </SidebarGroup>
 
             <div className="mt-6 px-3">
-              <Link href={createPageUrl("MyLinks")}>
+              <Link href="/my-links">
                 <Button className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Referral Link
@@ -208,21 +212,35 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
 
           <SidebarFooter className="border-t border-gray-200/50 dark:border-gray-700 p-4">
             {user ? (
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-semibold text-sm">
-                    {user.full_name?.charAt(0) || user.email?.charAt(0)}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 dark:text-white text-sm truncate">{user.full_name || 'User'}</p>
-                  <div className="flex items-center gap-2">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
-                    <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                      {user.reputation_score || 100}★
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center">
+                    <span className="text-white font-semibold text-sm">
+                      {user.full_name?.charAt(0) || user.email?.charAt(0)}
                     </span>
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 dark:text-white text-sm truncate">{user.full_name || 'User'}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">@{user.username || user.email?.split('@')[0]}</p>
+                      <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                        {user.reputation_score || 100}★
+                      </span>
+                    </div>
+                  </div>
                 </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full dark:border-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 hover:border-red-300 dark:hover:border-red-800"
+                  onClick={async () => {
+                    await base44.auth.signOut();
+                    window.location.href = '/';
+                  }}
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </Button>
               </div>
             ) : (
               <Button

@@ -20,10 +20,10 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 
 const statusConfig: any = {
-  pending: { color: "bg-yellow-100 text-yellow-700 border-yellow-200", icon: Clock, label: "Pending" },
-  accepted: { color: "bg-blue-100 text-blue-700 border-blue-200", icon: Handshake, label: "In Progress" },
-  completed: { color: "bg-green-100 text-green-700 border-green-200", icon: CheckCircle2, label: "Completed" },
-  cancelled: { color: "bg-red-100 text-red-700 border-red-200", icon: XCircle, label: "Cancelled" },
+  pending: { color: "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800", icon: Clock, label: "Pending" },
+  accepted: { color: "bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800", icon: Handshake, label: "In Progress" },
+  completed: { color: "bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800", icon: CheckCircle2, label: "Completed" },
+  cancelled: { color: "bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800", icon: XCircle, label: "Cancelled" },
 };
 
 function ExchangeCard({ exchange, myEmail, onUpdateStatus, isUpdating }: any) {
@@ -54,7 +54,7 @@ function ExchangeCard({ exchange, myEmail, onUpdateStatus, isUpdating }: any) {
 
   if (loading) {
     return (
-      <Card className="border-2">
+      <Card className="border-2 dark:bg-gray-800 dark:border-gray-700">
         <CardContent className="flex justify-center py-8">
           <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
         </CardContent>
@@ -67,10 +67,10 @@ function ExchangeCard({ exchange, myEmail, onUpdateStatus, isUpdating }: any) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <Card className="border-2 hover:border-emerald-300 transition-all">
+      <Card className="border-2 hover:border-emerald-300 dark:hover:border-emerald-600 transition-all dark:bg-gray-800 dark:border-gray-700">
         <CardHeader>
           <div className="flex justify-between items-start gap-3">
-            <CardTitle className="text-lg">
+            <CardTitle className="text-lg dark:text-white">
               {isRequester ? providerLink?.service_name : requesterLink?.service_name}
             </CardTitle>
             <Badge variant="outline" className={`${statusConfig[exchange.status].color} border shrink-0`}>
@@ -78,23 +78,23 @@ function ExchangeCard({ exchange, myEmail, onUpdateStatus, isUpdating }: any) {
               {statusConfig[exchange.status].label}
             </Badge>
           </div>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             {isRequester ? `With ${exchange.provider_email}` : `From ${exchange.requester_email}`}
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+          <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-3">
             <div className="flex items-center justify-between gap-4">
               <div className="flex-1">
-                <p className="text-xs text-gray-500 mb-1">You use:</p>
-                <p className="font-medium text-sm">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">You use:</p>
+                <p className="font-medium text-sm dark:text-white">
                   {isRequester ? providerLink?.service_name : requesterLink?.service_name}
                 </p>
               </div>
               <ArrowRight className="w-5 h-5 text-gray-400 shrink-0" />
               <div className="flex-1">
-                <p className="text-xs text-gray-500 mb-1">They use:</p>
-                <p className="font-medium text-sm">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">They use:</p>
+                <p className="font-medium text-sm dark:text-white">
                   {isRequester ? requesterLink?.service_name : providerLink?.service_name}
                 </p>
               </div>
@@ -102,9 +102,9 @@ function ExchangeCard({ exchange, myEmail, onUpdateStatus, isUpdating }: any) {
           </div>
 
           {exchange.notes && (
-            <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-              <p className="text-xs text-blue-600 font-medium mb-1">Message:</p>
-              <p className="text-sm text-gray-900">{exchange.notes}</p>
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
+              <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">Message:</p>
+              <p className="text-sm text-gray-900 dark:text-white">{exchange.notes}</p>
             </div>
           )}
 
@@ -205,36 +205,36 @@ export default function Exchanges() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">My Exchanges</h1>
-          <p className="text-gray-600">Track your referral link exchanges</p>
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">My Exchanges</h1>
+          <p className="text-gray-600 dark:text-gray-400">Track your referral link exchanges</p>
         </motion.div>
 
         <Tabs defaultValue="active" className="space-y-6">
-          <TabsList className="bg-white border-2">
-            <TabsTrigger value="pending" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
+          <TabsList className="bg-white dark:bg-gray-800 border-2 dark:border-gray-700">
+            <TabsTrigger value="pending" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white dark:data-[state=inactive]:text-gray-300">
               Pending ({pendingExchanges.length})
             </TabsTrigger>
-            <TabsTrigger value="active" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
+            <TabsTrigger value="active" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white dark:data-[state=inactive]:text-gray-300">
               Active ({activeExchanges.length})
             </TabsTrigger>
-            <TabsTrigger value="completed" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
+            <TabsTrigger value="completed" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white dark:data-[state=inactive]:text-gray-300">
               Completed ({completedExchanges.length})
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="pending" className="space-y-4">
             {pendingExchanges.length === 0 ? (
-              <Card className="border-2 border-dashed">
+              <Card className="border-2 border-dashed dark:bg-gray-800 dark:border-gray-700">
                 <CardContent className="text-center py-12">
                   <Clock className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-500">No pending exchanges</p>
+                  <p className="text-gray-500 dark:text-gray-400">No pending exchanges</p>
                 </CardContent>
               </Card>
             ) : (
@@ -252,10 +252,10 @@ export default function Exchanges() {
 
           <TabsContent value="active" className="space-y-4">
             {activeExchanges.length === 0 ? (
-              <Card className="border-2 border-dashed">
+              <Card className="border-2 border-dashed dark:bg-gray-800 dark:border-gray-700">
                 <CardContent className="text-center py-12">
                   <Handshake className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-500">No active exchanges</p>
+                  <p className="text-gray-500 dark:text-gray-400">No active exchanges</p>
                 </CardContent>
               </Card>
             ) : (
@@ -273,10 +273,10 @@ export default function Exchanges() {
 
           <TabsContent value="completed" className="space-y-4">
             {completedExchanges.length === 0 ? (
-              <Card className="border-2 border-dashed">
+              <Card className="border-2 border-dashed dark:bg-gray-800 dark:border-gray-700">
                 <CardContent className="text-center py-12">
                   <CheckCircle2 className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-500">No completed exchanges yet</p>
+                  <p className="text-gray-500 dark:text-gray-400">No completed exchanges yet</p>
                 </CardContent>
               </Card>
             ) : (

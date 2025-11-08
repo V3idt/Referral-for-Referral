@@ -53,7 +53,7 @@ export default function ExchangeDialog({
     try {
       const currentUser = await base44.auth.me();
       const links = await base44.entities.ReferralLink.filter({ 
-        created_by: currentUser.email,
+        user_id: currentUser.id,
         status: 'active'
       });
       setMyLinks(links);
