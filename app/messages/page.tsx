@@ -421,10 +421,10 @@ function MessagesContent() {
 
       {/* Rating Dialog */}
       <Dialog open={showRatingDialog} onOpenChange={setShowRatingDialog}>
-        <DialogContent className="dark:bg-gray-800 dark:border-gray-700">
+        <DialogContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <DialogHeader>
-            <DialogTitle className="dark:text-white">Rate User</DialogTitle>
-            <DialogDescription className="dark:text-gray-400">
+            <DialogTitle className="text-gray-900 dark:text-white">Rate User</DialogTitle>
+            <DialogDescription className="text-gray-600 dark:text-gray-400">
               Did {selectedUser?.full_name || selectedUserEmail} use your referral link?
             </DialogDescription>
           </DialogHeader>
@@ -432,7 +432,7 @@ function MessagesContent() {
             <div className="flex gap-4">
               <Button
                 variant={ratingData.completed === true ? "default" : "outline"}
-                className={`flex-1 ${ratingData.completed === true ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                className={`flex-1 ${ratingData.completed === true ? 'bg-green-600 hover:bg-green-700' : 'dark:border-gray-600 dark:text-white'}`}
                 onClick={() => setRatingData({ ...ratingData, completed: true })}
               >
                 <ThumbsUp className="w-4 h-4 mr-2" />
@@ -440,7 +440,7 @@ function MessagesContent() {
               </Button>
               <Button
                 variant={ratingData.completed === false ? "default" : "outline"}
-                className={`flex-1 ${ratingData.completed === false ? 'bg-red-600 hover:bg-red-700' : ''}`}
+                className={`flex-1 ${ratingData.completed === false ? 'bg-red-600 hover:bg-red-700' : 'dark:border-gray-600 dark:text-white'}`}
                 onClick={() => setRatingData({ ...ratingData, completed: false })}
               >
                 <ThumbsDown className="w-4 h-4 mr-2" />
@@ -448,13 +448,13 @@ function MessagesContent() {
               </Button>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="notes" className="dark:text-gray-200">Additional Notes (optional)</Label>
+              <Label htmlFor="notes" className="text-gray-900 dark:text-gray-200">Additional Notes (optional)</Label>
               <Textarea
                 id="notes"
                 placeholder="Share your experience..."
                 value={ratingData.notes}
                 onChange={(e) => setRatingData({ ...ratingData, notes: e.target.value })}
-                className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 rows={3}
               />
             </div>
@@ -471,14 +471,14 @@ function MessagesContent() {
             <Button
               variant="outline"
               onClick={() => setShowRatingDialog(false)}
-              className="dark:border-gray-600 dark:text-gray-300"
+              className="border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               Cancel
             </Button>
             <Button
               onClick={() => submitRatingMutation.mutate({ completed: ratingData.completed!, notes: ratingData.notes })}
               disabled={ratingData.completed === null || submitRatingMutation.isPending}
-              className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700"
+              className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white"
             >
               {submitRatingMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Submit Rating

@@ -381,27 +381,28 @@ export default function AdminPage() {
 
         {/* Ban User Dialog */}
         <Dialog open={showBanDialog} onOpenChange={setShowBanDialog}>
-          <DialogContent>
+          <DialogContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
             <DialogHeader>
-              <DialogTitle>Ban User</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-gray-900 dark:text-white">Ban User</DialogTitle>
+              <DialogDescription className="text-gray-600 dark:text-gray-400">
                 Ban {selectedUser?.email} from the platform
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="banReason">Reason (optional)</Label>
+                <Label htmlFor="banReason" className="text-gray-900 dark:text-gray-200">Reason (optional)</Label>
                 <Textarea
                   id="banReason"
                   placeholder="Violation of terms of service..."
                   value={banReason}
                   onChange={(e) => setBanReason(e.target.value)}
                   rows={3}
+                  className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowBanDialog(false)}>
+              <Button variant="outline" onClick={() => setShowBanDialog(false)} className="border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700">
                 Cancel
               </Button>
               <Button variant="destructive" onClick={handleBanUser}>
@@ -414,27 +415,28 @@ export default function AdminPage() {
 
         {/* Delete Link Dialog */}
         <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <DialogContent>
+          <DialogContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
             <DialogHeader>
-              <DialogTitle>Delete Referral Link</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-gray-900 dark:text-white">Delete Referral Link</DialogTitle>
+              <DialogDescription className="text-gray-600 dark:text-gray-400">
                 Delete "{selectedLink?.service_name}"
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="deleteReason">Reason (optional)</Label>
+                <Label htmlFor="deleteReason" className="text-gray-900 dark:text-gray-200">Reason (optional)</Label>
                 <Textarea
                   id="deleteReason"
                   placeholder="Spam, inappropriate content, etc..."
                   value={deleteReason}
                   onChange={(e) => setDeleteReason(e.target.value)}
                   rows={3}
+                  className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              <Button variant="outline" onClick={() => setShowDeleteDialog(false)} className="border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700">
                 Cancel
               </Button>
               <Button variant="destructive" onClick={handleDeleteLink}>

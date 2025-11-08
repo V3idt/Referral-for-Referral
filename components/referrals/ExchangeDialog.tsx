@@ -78,10 +78,10 @@ export default function ExchangeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <DialogHeader>
-          <DialogTitle>Request Exchange</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-gray-900 dark:text-white">Request Exchange</DialogTitle>
+          <DialogDescription className="text-gray-600 dark:text-gray-400">
             Choose one of your referral links to exchange with {providerLink?.service_name}
           </DialogDescription>
         </DialogHeader>
@@ -91,9 +91,9 @@ export default function ExchangeDialog({
             <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
           </div>
         ) : myLinks.length === 0 ? (
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertDescription>
+          <Alert className="bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
+            <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <AlertDescription className="text-amber-900 dark:text-amber-300">
               You need to add at least one referral link before requesting an exchange.
             </AlertDescription>
           </Alert>
@@ -109,14 +109,14 @@ export default function ExchangeDialog({
               </Alert>
 
               <div className="space-y-2">
-                <Label htmlFor="my_link">Select Your Referral Link *</Label>
+                <Label htmlFor="my_link" className="text-gray-900 dark:text-gray-200">Select Your Referral Link *</Label>
                 <Select value={selectedLinkId} onValueChange={setSelectedLinkId} required>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
                     <SelectValue placeholder="Choose a link to offer..." />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                     {myLinks.map((link) => (
-                      <SelectItem key={link.id} value={link.id}>
+                      <SelectItem key={link.id} value={link.id} className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700">
                         {link.service_name} - {link.description}
                       </SelectItem>
                     ))}
@@ -125,13 +125,14 @@ export default function ExchangeDialog({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="notes">Message (optional)</Label>
+                <Label htmlFor="notes" className="text-gray-900 dark:text-gray-200">Message (optional)</Label>
                 <Textarea
                   id="notes"
                   placeholder="Add a message to the other person..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={3}
+                  className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 />
               </div>
             </div>
@@ -141,13 +142,14 @@ export default function ExchangeDialog({
                 variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={isSubmitting}
+                className="border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={isSubmitting || !selectedLinkId}
-                className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700"
+                className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white"
               >
                 {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Send Request
