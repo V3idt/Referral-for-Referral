@@ -125,17 +125,14 @@ export default function Home() {
 
   const filterByDate = (link: any) => {
     if (dateFilter === "all") return true;
-    
-    if (!link.created_at) return true; // If no date, include it
+    if (!link.created_at) return true;
     
     const linkDate = new Date(link.created_at);
     const now = new Date();
     
-    // If date is invalid, exclude it
     if (isNaN(linkDate.getTime())) return false;
     
     if (dateFilter === "today") {
-      // Check if it's the same calendar day
       return (
         linkDate.getFullYear() === now.getFullYear() &&
         linkDate.getMonth() === now.getMonth() &&
@@ -144,13 +141,11 @@ export default function Home() {
     }
     
     if (dateFilter === "week") {
-      // Within the last 7 days
       const daysDiff = (now.getTime() - linkDate.getTime()) / (1000 * 60 * 60 * 24);
       return daysDiff >= 0 && daysDiff < 7;
     }
     
     if (dateFilter === "month") {
-      // Within the last 30 days
       const daysDiff = (now.getTime() - linkDate.getTime()) / (1000 * 60 * 60 * 24);
       return daysDiff >= 0 && daysDiff < 30;
     }

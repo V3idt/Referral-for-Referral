@@ -69,6 +69,7 @@ export interface Rating {
   id: string;
   rated_user_id: string;
   rater_user_id: string;
+  exchange_id?: string | null;
   completed_their_part: boolean;
   notes?: string | null;
   created_at: string;

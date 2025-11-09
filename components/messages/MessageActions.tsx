@@ -123,7 +123,7 @@ export function MessageActions({ message, currentUserId }: MessageActionsProps) 
       await base44.entities.Message.create({
         sender_id: currentUserId,
         receiver_id: message.sender_id,
-        content: `**Proof Screenshot Sent 📸**\n\nI've completed my part and attached a screenshot as proof!\n\nPlease review it and send your proof screenshot as well.`,
+        content: `Proof Screenshot Sent 📸\n\nI've completed my part and attached a screenshot as proof!\n\nPlease review it and send your proof screenshot as well.`,
         is_read: false,
         proof_url: publicUrl,
         metadata: {

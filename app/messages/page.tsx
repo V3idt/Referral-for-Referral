@@ -33,8 +33,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useSearchParams } from "next/navigation";
-import type { User, Message as MessageType, Rating } from "@/types";
+import type { User, Message as MessageType, Rating, Exchange } from "@/types";
 import { getAvatarColor } from "@/lib/utils";
 
 function MessagesContent() {
@@ -108,7 +114,6 @@ function MessagesContent() {
           filter: `sender_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log('📨 Sent message update:', payload);
           queryClient.invalidateQueries({ queryKey: ['messages'] });
         }
       )
@@ -125,8 +130,6 @@ function MessagesContent() {
           filter: `receiver_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log('📨 Received message update:', payload);
-          
           // Only show notifications for NEW messages (INSERT events)
           if (payload.eventType === 'INSERT' && payload.new) {
             const newMessage = payload.new as MessageType;
@@ -177,7 +180,24 @@ function MessagesContent() {
     queryKey: ['myRatings', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      return await base44.entities.Rating.filter({ rater_user_id: user.id });
+      const ratings = await base44.entities.Rating.filter({ rater_user_id: user.id });
+      return ratings || [];
+    },
+    enabled: !!user?.id,
+    staleTime: 0,
+    refetchOnMount: true,
+  });
+
+  // Fetch exchanges to find completed exchanges that can be rated
+  const { data: allExchanges = [] } = useQuery<Exchange[]>({
+    queryKey: ['exchanges', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const [asRequester, asProvider] = await Promise.all([
+        base44.entities.Exchange.filter({ requester_user_id: user.id }),
+        base44.entities.Exchange.filter({ provider_user_id: user.id }),
+      ]);
+      return [...asRequester, ...asProvider];
     },
     enabled: !!user?.id,
   });
@@ -227,42 +247,50 @@ function MessagesContent() {
   });
 
   const submitRatingMutation = useMutation({
-    mutationFn: async ({ completed, notes }: { completed: boolean; notes: string }) => {
-      // Find the user being rated by email
+    mutationFn: async ({ completed, notes, exchangeId }: { completed: boolean; notes: string; exchangeId?: string }) => {
       const ratedUser = allUsers.find((u) => u.email === selectedUserEmail);
-      if (!ratedUser) throw new Error("User not found");
       
+      if (!ratedUser) {
+        throw new Error("User not found");
+      }
+      
+      // If exchange_id provided, check if already rated that specific exchange
+      if (exchangeId) {
+        const existingRating = myRatings.find(
+          (r) => r.exchange_id === exchangeId && r.rater_user_id === user!.id
+        );
+        
+        if (existingRating) {
+          throw new Error("You've already rated this exchange");
+        }
+      }
+      
+      // Create the rating - database trigger will automatically update reputation
       const rating = await base44.entities.Rating.create({
         rated_user_id: ratedUser.id,
         rater_user_id: user!.id,
+        exchange_id: exchangeId || null,
         completed_their_part: completed,
         notes: notes || '',
       });
-
-      // Update the rated user's reputation
-      if (ratedUser) {
-        const currentScore = ratedUser.reputation_score || 100;
-        const totalRatings = ratedUser.total_ratings || 0;
-        const scoreChange = completed ? 5 : -10;
-        const newScore = Math.max(0, Math.min(100, currentScore + scoreChange));
-        
-        await base44.entities.User.update(ratedUser.id, {
-          reputation_score: newScore,
-          total_ratings: totalRatings + 1,
-        });
-      }
 
       return rating;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allUsers'] });
       queryClient.invalidateQueries({ queryKey: ['myRatings'] });
+      queryClient.invalidateQueries({ queryKey: ['exchanges'] });
       toast.success("Rating submitted!");
       setShowRatingDialog(false);
       setRatingData({ completed: null, notes: "" });
     },
-    onError: () => {
-      toast.error("Failed to submit rating");
+    onError: (error) => {
+      const errorMessage = (error as Error).message;
+      if (errorMessage.includes('duplicate key') || errorMessage.includes('already rated')) {
+        toast.error("You've already rated this user");
+      } else {
+        toast.error("Failed to submit rating");
+      }
     },
   });
 
@@ -319,10 +347,30 @@ function MessagesContent() {
 
   // Removed handleRateUser - using direct rating buttons now
 
-  // Check if user has already rated the selected user
-  const selectedUserObj = allUsers.find((u) => u.email === selectedUserEmail);
-  const hasRatedUser = selectedUserObj ? myRatings.some((r) => r.rated_user_id === selectedUserObj.id) : false;
+  // Find exchanges with selected user that haven't been rated yet
   const selectedUser = allUsers.find((u) => u.email === selectedUserEmail);
+  const userExchanges = selectedUser 
+    ? allExchanges.filter((ex) => 
+        // Any exchange (pending, accepted, or completed) with this user
+        (ex.requester_user_id === selectedUser.id || ex.provider_user_id === selectedUser.id) &&
+        // Don't show rating for cancelled exchanges
+        ex.status !== 'cancelled'
+      )
+    : [];
+  
+  // Find which exchanges haven't been rated yet
+  const unratedExchanges = userExchanges.filter((ex) => 
+    !myRatings.some((r) => r.exchange_id === ex.id)
+  );
+  
+  // Get the most recent unrated exchange to rate
+  const exchangeToRate = unratedExchanges.length > 0 
+    ? unratedExchanges.sort((a, b) => 
+        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      )[0]
+    : null;
+  
+  const canRateUser = !!exchangeToRate;
 
   if (!user || isLoading) {
     return (
@@ -432,39 +480,64 @@ function MessagesContent() {
                     )}
                   </div>
                 </div>
-                {!hasRatedUser && (
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        submitRatingMutation.mutate({
-                          userEmail: selectedUserEmail!,
-                          completed: true,
-                          notes: "Completed their part of the exchange"
-                        });
-                      }}
-                      className="dark:border-gray-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-500 dark:hover:border-emerald-500"
-                    >
-                      <ThumbsUp className="w-4 h-4 mr-1" />
-                      Completed
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        submitRatingMutation.mutate({
-                          userEmail: selectedUserEmail!,
-                          completed: false,
-                          notes: "Did not complete their part of the exchange"
-                        });
-                      }}
-                      className="dark:border-gray-600 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-500 dark:hover:border-red-500"
-                    >
-                      <ThumbsDown className="w-4 h-4 mr-1" />
-                      Incomplete
-                    </Button>
-                  </div>
+                {selectedUserEmail && (
+                  !canRateUser ? (
+                    <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1.5 rounded-md">
+                      {userExchanges.length > 0 ? '✓ All exchanges rated' : 'Request a swap to rate'}
+                    </div>
+                  ) : (
+                    <TooltipProvider>
+                      <div className="flex gap-2">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                submitRatingMutation.mutate({
+                                  completed: true,
+                                  notes: "Didn't cheat - completed their part of the exchange",
+                                  exchangeId: exchangeToRate?.id
+                                });
+                              }}
+                              disabled={submitRatingMutation.isPending}
+                              className="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 hover:border-emerald-400 dark:hover:border-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <ThumbsUp className="w-4 h-4 md:mr-1" />
+                              <span className="hidden md:inline">Didn&apos;t cheat</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Mark as didn&apos;t cheat (honest user)</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                submitRatingMutation.mutate({
+                                  completed: false,
+                                  notes: "Cheated - did not complete their part of the exchange",
+                                  exchangeId: exchangeToRate?.id
+                                });
+                              }}
+                              disabled={submitRatingMutation.isPending}
+                              className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-300 dark:border-red-700 hover:bg-red-100 dark:hover:bg-red-900/40 hover:border-red-400 dark:hover:border-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <ThumbsDown className="w-4 h-4 md:mr-1" />
+                              <span className="hidden md:inline">Cheated</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Mark as cheated (didn&apos;t complete exchange)</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </TooltipProvider>
+                  )
                 )}
               </div>
             </div>
