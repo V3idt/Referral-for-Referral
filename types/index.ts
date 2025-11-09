@@ -4,9 +4,12 @@ export interface User {
   id: string;
   email: string;
   full_name?: string | null;
+  username?: string | null;
   reputation_score?: number;
   total_ratings?: number;
   last_active?: string | null;
+  is_admin?: boolean;
+  is_banned?: boolean;
   created_at?: string;
   updated_at?: string;
 }

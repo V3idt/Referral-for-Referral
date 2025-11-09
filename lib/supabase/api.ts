@@ -22,7 +22,7 @@ export const auth = {
   /**
    * Get current user
    */
-  async me() {
+  async me(): Promise<User> {
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error || !user) throw new Error('Not authenticated');
 
@@ -37,9 +37,12 @@ export const auth = {
       id: user.id,
       email: user.email!,
       full_name: null,
+      username: null,
       reputation_score: 100,
       total_ratings: 0,
       last_active: null,
+      is_admin: false,
+      is_banned: false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };

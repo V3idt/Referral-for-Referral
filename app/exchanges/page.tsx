@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import type { Exchange } from "@/types";
 
 const statusConfig: any = {
   pending: { color: "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800", icon: Clock, label: "Pending" },
@@ -177,11 +178,11 @@ export default function Exchanges() {
     queryFn: () => base44.entities.User.list(),
   });
 
-  const { data: exchanges = [], isLoading } = useQuery({
+  const { data: exchanges = [], isLoading } = useQuery<Exchange[]>({
     queryKey: ['exchanges', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      const [asRequester, asProvider] = await Promise.all([
+      const [asRequester, asProvider]: [Exchange[], Exchange[]] = await Promise.all([
         base44.entities.Exchange.filter({ requester_user_id: user.id }),
         base44.entities.Exchange.filter({ provider_user_id: user.id }),
       ]);

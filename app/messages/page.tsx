@@ -74,7 +74,7 @@ function MessagesContent() {
     queryKey: ['messages', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      const [sent, received] = await Promise.all([
+      const [sent, received]: [MessageType[], MessageType[]] = await Promise.all([
         base44.entities.Message.filter({ sender_id: user.id }),
         base44.entities.Message.filter({ receiver_id: user.id }),
       ]);
@@ -193,7 +193,7 @@ function MessagesContent() {
     queryKey: ['exchanges', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      const [asRequester, asProvider] = await Promise.all([
+      const [asRequester, asProvider]: [Exchange[], Exchange[]] = await Promise.all([
         base44.entities.Exchange.filter({ requester_user_id: user.id }),
         base44.entities.Exchange.filter({ provider_user_id: user.id }),
       ]);

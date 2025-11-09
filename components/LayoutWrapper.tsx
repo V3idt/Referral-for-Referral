@@ -152,7 +152,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
             const newMessage = payload.new as any;
             
             // Fetch sender info
-            const sender = allUsers.find((u: any) => u.id === newMessage.sender_id);
+            const sender: any = allUsers.find((u: any) => u.id === newMessage.sender_id);
             const senderName = sender?.full_name || sender?.username || sender?.email || 'Someone';
             const messagePreview = newMessage.content.substring(0, 50) + (newMessage.content.length > 50 ? '...' : '');
             

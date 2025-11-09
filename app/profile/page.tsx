@@ -11,12 +11,14 @@ import { Loader2, CheckCircle, XCircle, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { getAvatarColor } from '@/lib/utils';
+import type { User } from '@/types';
+import type { Database } from '@/lib/supabase/database.types';
 
 export default function ProfilePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
   const [originalUsername, setOriginalUsername] = useState('');
@@ -52,14 +54,16 @@ export default function ProfilePage() {
         .from('users')
         .select('*')
         .eq('id', authUser.id)
-        .single();
+        .single<User>();
 
       if (error) throw error;
 
-      setUser(data);
-      setFullName(data.full_name || '');
-      setUsername(data.username || '');
-      setOriginalUsername(data.username || '');
+      if (data) {
+        setUser(data);
+        setFullName(data.full_name || '');
+        setUsername(data.username || '');
+        setOriginalUsername(data.username || '');
+      }
     } catch (error) {
       console.error('Error loading profile:', error);
       toast.error('Failed to load profile');
@@ -78,11 +82,11 @@ export default function ProfilePage() {
     try {
       const { data, error } = await supabase.rpc('is_username_available', {
         check_username: username,
-        exclude_user_id: user.id,
-      });
+        exclude_user_id: user?.id || null,
+      } as any);
 
       if (error) throw error;
-      setUsernameAvailable(data);
+      setUsernameAvailable(data as boolean);
     } catch (error) {
       console.error('Error checking username:', error);
     } finally {
@@ -111,13 +115,11 @@ export default function ProfilePage() {
 
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('users')
-        .update({
-          full_name: fullName,
-          username: username.toLowerCase(),
-        })
-        .eq('id', user.id);
+      // @ts-expect-error - Supabase type inference issue in strict mode
+      const { error } = await supabase.from('users').update({
+        full_name: fullName,
+        username: username.toLowerCase(),
+      }).eq('id', user.id);
 
       if (error) throw error;
 

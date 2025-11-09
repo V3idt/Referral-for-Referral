@@ -8,6 +8,7 @@ import { Search, Sparkles, TrendingUp, Star, Calendar, Activity } from "lucide-r
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import type { Exchange } from "@/types";
 import {
   Select,
   SelectContent,
@@ -59,7 +60,7 @@ export default function Home() {
       }
 
       // Create the exchange
-      const exchange = await base44.entities.Exchange.create({
+      const exchange: Exchange = await base44.entities.Exchange.create({
         requester_link_id: requesterLink.id,
         provider_link_id: providerLink.id,
         requester_user_id: user.id,
