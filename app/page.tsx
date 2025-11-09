@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/lib/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
-import { Search, Sparkles, TrendingUp, Star, Calendar } from "lucide-react";
+import { Search, Sparkles, TrendingUp, Star, Calendar, Activity } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -23,6 +23,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [dateFilter, setDateFilter] = useState("all");
   const [minTrustScore, setMinTrustScore] = useState("0");
+  const [onlineFilter, setOnlineFilter] = useState("online");
   const [selectedLink, setSelectedLink] = useState(null);
   const [showExchangeDialog, setShowExchangeDialog] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -124,13 +125,36 @@ export default function Home() {
 
   const filterByDate = (link: any) => {
     if (dateFilter === "all") return true;
-    const linkDate = new Date(link.created_date);
-    const now = new Date();
-    const daysDiff = (now.getTime() - linkDate.getTime()) / (1000 * 60 * 60 * 24);
     
-    if (dateFilter === "today") return daysDiff < 1;
-    if (dateFilter === "week") return daysDiff < 7;
-    if (dateFilter === "month") return daysDiff < 30;
+    if (!link.created_at) return true; // If no date, include it
+    
+    const linkDate = new Date(link.created_at);
+    const now = new Date();
+    
+    // If date is invalid, exclude it
+    if (isNaN(linkDate.getTime())) return false;
+    
+    if (dateFilter === "today") {
+      // Check if it's the same calendar day
+      return (
+        linkDate.getFullYear() === now.getFullYear() &&
+        linkDate.getMonth() === now.getMonth() &&
+        linkDate.getDate() === now.getDate()
+      );
+    }
+    
+    if (dateFilter === "week") {
+      // Within the last 7 days
+      const daysDiff = (now.getTime() - linkDate.getTime()) / (1000 * 60 * 60 * 24);
+      return daysDiff >= 0 && daysDiff < 7;
+    }
+    
+    if (dateFilter === "month") {
+      // Within the last 30 days
+      const daysDiff = (now.getTime() - linkDate.getTime()) / (1000 * 60 * 60 * 24);
+      return daysDiff >= 0 && daysDiff < 30;
+    }
+    
     return true;
   };
 
@@ -158,21 +182,59 @@ export default function Home() {
     
     return matchesSearch && notMine && matchesDate && matchesTrust;
   }).sort((a: any, b: any) => {
-    // Sort by online status first (online > recent > offline)
-    const aStatus = getUserOnlineStatus(a.user_id);
-    const bStatus = getUserOnlineStatus(b.user_id);
-    const statusOrder = { online: 3, recent: 2, offline: 1 };
-    if (statusOrder[aStatus as keyof typeof statusOrder] !== statusOrder[bStatus as keyof typeof statusOrder]) {
-      return statusOrder[bStatus as keyof typeof statusOrder] - statusOrder[aStatus as keyof typeof statusOrder];
+    // Primary sort based on selected filter
+    if (onlineFilter === 'online') {
+      // Sort by online status first (online > recent > offline)
+      const aStatus = getUserOnlineStatus(a.user_id);
+      const bStatus = getUserOnlineStatus(b.user_id);
+      const statusOrder = { online: 3, recent: 2, offline: 1 };
+      if (statusOrder[aStatus as keyof typeof statusOrder] !== statusOrder[bStatus as keyof typeof statusOrder]) {
+        return statusOrder[bStatus as keyof typeof statusOrder] - statusOrder[aStatus as keyof typeof statusOrder];
+      }
+      
+      // Then sort by reputation
+      const aReputation = usersMap[a.user_id]?.reputation_score || 100;
+      const bReputation = usersMap[b.user_id]?.reputation_score || 100;
+      if (aReputation !== bReputation) return bReputation - aReputation;
+      
+      // Finally sort by date
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    } else if (onlineFilter === 'trust') {
+      // Sort by trust score first
+      const aReputation = usersMap[a.user_id]?.reputation_score || 100;
+      const bReputation = usersMap[b.user_id]?.reputation_score || 100;
+      if (aReputation !== bReputation) return bReputation - aReputation;
+      
+      // Then by online status
+      const aStatus = getUserOnlineStatus(a.user_id);
+      const bStatus = getUserOnlineStatus(b.user_id);
+      const statusOrder = { online: 3, recent: 2, offline: 1 };
+      if (statusOrder[aStatus as keyof typeof statusOrder] !== statusOrder[bStatus as keyof typeof statusOrder]) {
+        return statusOrder[bStatus as keyof typeof statusOrder] - statusOrder[aStatus as keyof typeof statusOrder];
+      }
+      
+      // Finally by date
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    } else if (onlineFilter === 'recent') {
+      // Sort by date first
+      const dateCompare = new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      if (dateCompare !== 0) return dateCompare;
+      
+      // Then by online status
+      const aStatus = getUserOnlineStatus(a.user_id);
+      const bStatus = getUserOnlineStatus(b.user_id);
+      const statusOrder = { online: 3, recent: 2, offline: 1 };
+      if (statusOrder[aStatus as keyof typeof statusOrder] !== statusOrder[bStatus as keyof typeof statusOrder]) {
+        return statusOrder[bStatus as keyof typeof statusOrder] - statusOrder[aStatus as keyof typeof statusOrder];
+      }
+      
+      // Finally by reputation
+      const aReputation = usersMap[a.user_id]?.reputation_score || 100;
+      const bReputation = usersMap[b.user_id]?.reputation_score || 100;
+      return bReputation - aReputation;
     }
     
-    // Then sort by reputation
-    const aReputation = usersMap[a.user_id]?.reputation_score || 100;
-    const bReputation = usersMap[b.user_id]?.reputation_score || 100;
-    if (aReputation !== bReputation) return bReputation - aReputation;
-    
-    // Finally sort by date
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    return 0;
   });
 
   const handleRequestExchange = (link: any) => {
@@ -268,6 +330,20 @@ export default function Home() {
                   <SelectItem value="75">75+ stars</SelectItem>
                   <SelectItem value="90">90+ stars</SelectItem>
                   <SelectItem value="100">100 stars</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Activity className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+              <Select value={onlineFilter} onValueChange={setOnlineFilter}>
+                <SelectTrigger className="w-40 dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
+                  <SelectItem value="online">Online first</SelectItem>
+                  <SelectItem value="trust">Trust score</SelectItem>
+                  <SelectItem value="recent">Most recent</SelectItem>
                 </SelectContent>
               </Select>
             </div>
