@@ -179,7 +179,7 @@ Build the project:
 npm run build
 ```
 
-The output will be in the `.next` folder. Follow your hosting platform's Next.js deployment guide.
+The output will be in the `.next` folder, then follow your hosting platform's Next.js deployment guide.
 
 ## 🔒 Security Features
 
