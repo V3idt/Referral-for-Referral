@@ -46,15 +46,17 @@ export default function AdminPage() {
         return;
       }
 
-      const { data, error } = await supabase
+      const res = await supabase
         .from('users')
         .select('is_admin')
         .eq('id', user.id)
         .single();
+      const data = res.data as { is_admin: boolean } | null;
+      const error = res.error;
 
       if (error) throw error;
 
-      if (data?.is_admin) {
+      if (data && data.is_admin) {
         setIsAdmin(true);
         loadAdminData();
       } else {
@@ -105,7 +107,7 @@ export default function AdminPage() {
       const { error } = await supabase.rpc('ban_user', {
         target_user_id: selectedUser.id,
         reason: banReason || null,
-      });
+      } as any);
 
       if (error) throw error;
 
@@ -124,7 +126,7 @@ export default function AdminPage() {
     try {
       const { error } = await supabase.rpc('unban_user', {
         target_user_id: user.id,
-      });
+      } as any);
 
       if (error) throw error;
 
@@ -143,7 +145,7 @@ export default function AdminPage() {
       const { error } = await supabase.rpc('admin_delete_referral_link', {
         link_id: selectedLink.id,
         reason: deleteReason || null,
-      });
+      } as any);
 
       if (error) throw error;
 
@@ -177,7 +179,7 @@ export default function AdminPage() {
             <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
             <CardTitle className="text-center">Access Denied</CardTitle>
             <CardDescription className="text-center">
-              You don't have permission to access the admin panel
+              You don&apos;t have permission to access the admin panel
             </CardDescription>
           </CardHeader>
         </Card>
@@ -419,7 +421,7 @@ export default function AdminPage() {
             <DialogHeader>
               <DialogTitle className="text-gray-900 dark:text-white">Delete Referral Link</DialogTitle>
               <DialogDescription className="text-gray-600 dark:text-gray-400">
-                Delete "{selectedLink?.service_name}"
+                Delete &quot;{selectedLink?.service_name}&quot;
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">

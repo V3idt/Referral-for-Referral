@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, Upload, ImageIcon } from "lucide-react";
 import { base44 } from "@/lib/base44Client";
 import { toast } from "sonner";
-import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Message } from "@/types";
 
 interface MessageActionsProps {
@@ -65,7 +65,7 @@ export function MessageActions({ message, currentUserId }: MessageActionsProps) 
       queryClient.invalidateQueries({ queryKey: ['messages'] });
       queryClient.invalidateQueries({ queryKey: ['exchanges'] });
       toast.success("Exchange accepted! You can now complete it.");
-    } catch (error) {
+    } catch {
       setActionTaken(null); // Reset on error
       toast.error("Failed to accept exchange");
     }
@@ -101,7 +101,7 @@ export function MessageActions({ message, currentUserId }: MessageActionsProps) 
       queryClient.invalidateQueries({ queryKey: ['messages'] });
       queryClient.invalidateQueries({ queryKey: ['exchanges'] });
       toast.success("Exchange declined");
-    } catch (error) {
+    } catch {
       setActionTaken(null); // Reset on error
       toast.error("Failed to decline exchange");
     }

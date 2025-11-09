@@ -55,7 +55,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
         await base44.auth.updateMe({ last_active: new Date().toISOString() });
-      } catch (error) {}
+      } catch {}
     };
     loadAndUpdateUser();
     const interval = setInterval(loadAndUpdateUser, 60000);
@@ -76,7 +76,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     queryFn: async () => {
       if (!user) return 0;
       const messages = await base44.entities.Message.filter({ 
-        receiver_email: user.email,
+        receiver_id: user.id,
         is_read: false 
       });
       return messages.length;

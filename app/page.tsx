@@ -8,7 +8,6 @@ import { Search, Sparkles, TrendingUp, Star, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 import {
   Select,
   SelectContent,
@@ -21,7 +20,6 @@ import ReferralCard from "@/components/referrals/ReferralCard";
 import ExchangeDialog from "@/components/referrals/ExchangeDialog";
 
 export default function Home() {
-  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [dateFilter, setDateFilter] = useState("all");
   const [minTrustScore, setMinTrustScore] = useState("0");

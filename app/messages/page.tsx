@@ -23,6 +23,7 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { supabase } from "@/lib/supabase/client";
+import { requestNotificationPermission, playNotificationSound, showBrowserNotification } from "@/lib/notifications";
 import {
   Dialog,
   DialogContent,
@@ -87,7 +88,6 @@ function MessagesContent() {
 
   // Request notification permission on mount
   useEffect(() => {
-    const { requestNotificationPermission } = require('@/lib/notifications');
     requestNotificationPermission();
   }, []);
 
@@ -137,7 +137,6 @@ function MessagesContent() {
             const messagePreview = newMessage.content.substring(0, 50) + (newMessage.content.length > 50 ? '...' : '');
             
             // Play notification sound
-            const { playNotificationSound } = require('@/lib/notifications');
             playNotificationSound();
             
             // Show in-app toast notification
@@ -148,7 +147,6 @@ function MessagesContent() {
             
             // Show browser notification if tab is not focused
             if (document.hidden) {
-              const { showBrowserNotification } = require('@/lib/notifications');
               const notification = showBrowserNotification(`New message from ${senderName}`, {
                 body: newMessage.content.substring(0, 100),
                 tag: 'message-notification',
@@ -440,7 +438,7 @@ function MessagesContent() {
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        ratingMutation.mutate({
+                        submitRatingMutation.mutate({
                           userEmail: selectedUserEmail!,
                           completed: true,
                           notes: "Completed their part of the exchange"
@@ -455,7 +453,7 @@ function MessagesContent() {
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        ratingMutation.mutate({
+                        submitRatingMutation.mutate({
                           userEmail: selectedUserEmail!,
                           completed: false,
                           notes: "Did not complete their part of the exchange"

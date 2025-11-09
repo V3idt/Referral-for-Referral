@@ -204,11 +204,10 @@ export default function Exchanges() {
       // Determine who to notify (the other person)
       const isRequester = exchange.requester_user_id === user?.id;
       const recipientId = isRequester ? exchange.provider_user_id : exchange.requester_user_id;
-      const recipient = allUsers.find((u: any) => u.id === recipientId);
       
       // Send notification messages for status changes
       let messageContent = '';
-      let metadata: any = {
+      const metadata: any = {
         type: 'exchange_update',
         exchange_id: id,
         exchange_status: status

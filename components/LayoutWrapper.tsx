@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase/client";
 import { toast } from "sonner";
+import { requestNotificationPermission, playNotificationSound, showBrowserNotification } from "@/lib/notifications";
 
 const getNavigationItems = (isAdmin: boolean) => {
   const items = [
@@ -107,7 +108,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
     queryFn: async () => {
       if (!user) return 0;
       const messages = await base44.entities.Message.filter({ 
-        receiver_email: user.email,
+        receiver_id: user.id,
         is_read: false 
       });
       return messages.length;
@@ -125,7 +126,6 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
 
   // Request notification permission on mount
   React.useEffect(() => {
-    const { requestNotificationPermission } = require('@/lib/notifications');
     requestNotificationPermission();
   }, []);
 
@@ -157,7 +157,6 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
             const messagePreview = newMessage.content.substring(0, 50) + (newMessage.content.length > 50 ? '...' : '');
             
             // Play notification sound
-            const { playNotificationSound, showBrowserNotification } = require('@/lib/notifications');
             playNotificationSound();
             
             // Show in-app toast notification
@@ -400,4 +399,5 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
     </SidebarProvider>
   );
 }
+
 

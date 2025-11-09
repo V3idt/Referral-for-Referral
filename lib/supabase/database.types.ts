@@ -19,9 +19,15 @@ export interface Database {
           id: string;
           email: string;
           full_name: string | null;
+          username: string | null;
           reputation_score: number;
           total_ratings: number;
           last_active: string | null;
+          is_admin: boolean;
+          is_banned: boolean;
+          banned_at: string | null;
+          banned_by: string | null;
+          ban_reason: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -29,9 +35,15 @@ export interface Database {
           id: string;
           email: string;
           full_name?: string | null;
+          username?: string | null;
           reputation_score?: number;
           total_ratings?: number;
           last_active?: string | null;
+          is_admin?: boolean;
+          is_banned?: boolean;
+          banned_at?: string | null;
+          banned_by?: string | null;
+          ban_reason?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -39,9 +51,15 @@ export interface Database {
           id?: string;
           email?: string;
           full_name?: string | null;
+          username?: string | null;
           reputation_score?: number;
           total_ratings?: number;
           last_active?: string | null;
+          is_admin?: boolean;
+          is_banned?: boolean;
+          banned_at?: string | null;
+          banned_by?: string | null;
+          ban_reason?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -57,6 +75,9 @@ export interface Database {
           logo_url: string | null;
           status: 'active' | 'paused' | 'fulfilled';
           total_exchanges: number;
+          deleted_at: string | null;
+          deleted_by: string | null;
+          delete_reason: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -70,6 +91,9 @@ export interface Database {
           logo_url?: string | null;
           status?: 'active' | 'paused' | 'fulfilled';
           total_exchanges?: number;
+          deleted_at?: string | null;
+          deleted_by?: string | null;
+          delete_reason?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -83,6 +107,9 @@ export interface Database {
           logo_url?: string | null;
           status?: 'active' | 'paused' | 'fulfilled';
           total_exchanges?: number;
+          deleted_at?: string | null;
+          deleted_by?: string | null;
+          delete_reason?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -180,12 +207,63 @@ export interface Database {
           created_at?: string;
         };
       };
+      admin_actions: {
+        Row: {
+          id: string;
+          admin_id: string | null;
+          action_type: string;
+          target_user_id: string | null;
+          target_link_id: string | null;
+          reason: string | null;
+          metadata: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          admin_id?: string | null;
+          action_type: string;
+          target_user_id?: string | null;
+          target_link_id?: string | null;
+          reason?: string | null;
+          metadata?: Json | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          admin_id?: string | null;
+          action_type?: string;
+          target_user_id?: string | null;
+          target_link_id?: string | null;
+          reason?: string | null;
+          metadata?: Json | null;
+          created_at?: string;
+        };
+      };
     };
     Views: {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      is_user_admin: {
+        Args: { user_id: string };
+        Returns: boolean;
+      };
+      ban_user: {
+        Args: { target_user_id: string; reason?: string | null };
+        Returns: void;
+      };
+      unban_user: {
+        Args: { target_user_id: string };
+        Returns: void;
+      };
+      admin_delete_referral_link: {
+        Args: { link_id: string; reason?: string | null };
+        Returns: void;
+      };
+      is_username_available: {
+        Args: { check_username: string; exclude_user_id?: string | null };
+        Returns: boolean;
+      };
     };
     Enums: {
       link_status: 'active' | 'paused' | 'fulfilled';
