@@ -289,7 +289,7 @@ function MessagesContent() {
       if (errorMessage.includes('duplicate key') || errorMessage.includes('already rated')) {
         toast.error("You've already rated this user");
       } else {
-        toast.error("Failed to submit rating");
+      toast.error("Failed to submit rating");
       }
     },
   });
@@ -487,25 +487,25 @@ function MessagesContent() {
                     </div>
                   ) : (
                     <TooltipProvider>
-                      <div className="flex gap-2">
+                  <div className="flex gap-2">
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                submitRatingMutation.mutate({
-                                  completed: true,
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        submitRatingMutation.mutate({
+                          completed: true,
                                   notes: "Didn't cheat - completed their part of the exchange",
                                   exchangeId: exchangeToRate?.id
-                                });
-                              }}
+                        });
+                      }}
                               disabled={submitRatingMutation.isPending}
                               className="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 hover:border-emerald-400 dark:hover:border-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
+                    >
                               <ThumbsUp className="w-4 h-4 md:mr-1" />
                               <span className="hidden md:inline">Didn&apos;t cheat</span>
-                            </Button>
+                    </Button>
                           </TooltipTrigger>
                           <TooltipContent>
                             <p>Mark as didn&apos;t cheat (honest user)</p>
@@ -514,28 +514,28 @@ function MessagesContent() {
                         
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                submitRatingMutation.mutate({
-                                  completed: false,
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        submitRatingMutation.mutate({
+                          completed: false,
                                   notes: "Cheated - did not complete their part of the exchange",
                                   exchangeId: exchangeToRate?.id
-                                });
-                              }}
+                        });
+                      }}
                               disabled={submitRatingMutation.isPending}
                               className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-300 dark:border-red-700 hover:bg-red-100 dark:hover:bg-red-900/40 hover:border-red-400 dark:hover:border-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
+                    >
                               <ThumbsDown className="w-4 h-4 md:mr-1" />
                               <span className="hidden md:inline">Cheated</span>
-                            </Button>
+                    </Button>
                           </TooltipTrigger>
                           <TooltipContent>
                             <p>Mark as cheated (didn&apos;t complete exchange)</p>
                           </TooltipContent>
                         </Tooltip>
-                      </div>
+                  </div>
                     </TooltipProvider>
                   )
                 )}

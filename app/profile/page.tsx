@@ -59,10 +59,10 @@ export default function ProfilePage() {
       if (error) throw error;
 
       if (data) {
-        setUser(data);
-        setFullName(data.full_name || '');
-        setUsername(data.username || '');
-        setOriginalUsername(data.username || '');
+      setUser(data);
+      setFullName(data.full_name || '');
+      setUsername(data.username || '');
+      setOriginalUsername(data.username || '');
       }
     } catch (error) {
       console.error('Error loading profile:', error);
@@ -117,8 +117,8 @@ export default function ProfilePage() {
     try {
       // @ts-expect-error - Supabase type inference issue in strict mode
       const { error } = await supabase.from('users').update({
-        full_name: fullName,
-        username: username.toLowerCase(),
+          full_name: fullName,
+          username: username.toLowerCase(),
       }).eq('id', user.id);
 
       if (error) throw error;

@@ -147,7 +147,7 @@ export default function Home() {
     }
     
     if (dateFilter === "month") {
-      const daysDiff = (now.getTime() - linkDate.getTime()) / (1000 * 60 * 60 * 24);
+    const daysDiff = (now.getTime() - linkDate.getTime()) / (1000 * 60 * 60 * 24);
       return daysDiff >= 0 && daysDiff < 30;
     }
     
@@ -180,21 +180,21 @@ export default function Home() {
   }).sort((a: any, b: any) => {
     // Primary sort based on selected filter
     if (onlineFilter === 'online') {
-      // Sort by online status first (online > recent > offline)
-      const aStatus = getUserOnlineStatus(a.user_id);
-      const bStatus = getUserOnlineStatus(b.user_id);
-      const statusOrder = { online: 3, recent: 2, offline: 1 };
-      if (statusOrder[aStatus as keyof typeof statusOrder] !== statusOrder[bStatus as keyof typeof statusOrder]) {
-        return statusOrder[bStatus as keyof typeof statusOrder] - statusOrder[aStatus as keyof typeof statusOrder];
-      }
-      
-      // Then sort by reputation
-      const aReputation = usersMap[a.user_id]?.reputation_score || 100;
-      const bReputation = usersMap[b.user_id]?.reputation_score || 100;
-      if (aReputation !== bReputation) return bReputation - aReputation;
-      
-      // Finally sort by date
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    // Sort by online status first (online > recent > offline)
+    const aStatus = getUserOnlineStatus(a.user_id);
+    const bStatus = getUserOnlineStatus(b.user_id);
+    const statusOrder = { online: 3, recent: 2, offline: 1 };
+    if (statusOrder[aStatus as keyof typeof statusOrder] !== statusOrder[bStatus as keyof typeof statusOrder]) {
+      return statusOrder[bStatus as keyof typeof statusOrder] - statusOrder[aStatus as keyof typeof statusOrder];
+    }
+    
+    // Then sort by reputation
+    const aReputation = usersMap[a.user_id]?.reputation_score || 100;
+    const bReputation = usersMap[b.user_id]?.reputation_score || 100;
+    if (aReputation !== bReputation) return bReputation - aReputation;
+    
+    // Finally sort by date
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     } else if (onlineFilter === 'trust') {
       // Sort by trust score first
       const aReputation = usersMap[a.user_id]?.reputation_score || 100;

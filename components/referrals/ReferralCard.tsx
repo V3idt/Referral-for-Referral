@@ -123,9 +123,9 @@ export default function ReferralCard({
                   {/* Reputation Score */}
                   {ownerReputation && (
                     <div className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 font-medium">
-                      <Star className="w-3 h-3 fill-current" />
-                      {ownerReputation}
-                    </div>
+                        <Star className="w-3 h-3 fill-current" />
+                        {ownerReputation}
+                      </div>
                   )}
                   
                   {/* New User Badge */}
