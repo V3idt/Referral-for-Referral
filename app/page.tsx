@@ -288,7 +288,7 @@ export default function Home() {
               <span className="inline-block min-w-[120px] text-emerald-200 dark:text-emerald-300">
                 {animatedNumber}
               </span>{" "}
-              referrals
+              Referrals
             </h1>
             
             {/* How It Works Steps */}
