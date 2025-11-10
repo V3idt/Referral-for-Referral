@@ -21,16 +21,19 @@ interface EnvConfig {
 }
 
 function validateEnv(): EnvConfig {
-  // DEBUG: Log all environment variables during build
-  console.log('=================================');
-  console.log('ENV VALIDATION DEBUG:');
-  console.log('NODE_ENV:', process.env.NODE_ENV);
-  console.log('NEXT_PUBLIC_SUPABASE_URL present?', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
-  console.log('NEXT_PUBLIC_SUPABASE_URL value:', process.env.NEXT_PUBLIC_SUPABASE_URL ? `${process.env.NEXT_PUBLIC_SUPABASE_URL.substring(0, 30)}...` : 'UNDEFINED');
-  console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY present?', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-  console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY value:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? `${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.substring(0, 30)}...` : 'UNDEFINED');
-  console.log('All process.env keys:', Object.keys(process.env).filter(k => k.includes('SUPABASE')));
-  console.log('=================================');
+  // Only validate and log during build/server-side
+  const isServer = typeof window === 'undefined';
+  
+  if (isServer) {
+    console.log('=================================');
+    console.log('ENV VALIDATION DEBUG (Server-side):');
+    console.log('NODE_ENV:', process.env.NODE_ENV);
+    console.log('NEXT_PUBLIC_SUPABASE_URL present?', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
+    console.log('NEXT_PUBLIC_SUPABASE_URL value:', process.env.NEXT_PUBLIC_SUPABASE_URL ? `${process.env.NEXT_PUBLIC_SUPABASE_URL.substring(0, 30)}...` : 'UNDEFINED');
+    console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY present?', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+    console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY value:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? `${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.substring(0, 30)}...` : 'UNDEFINED');
+    console.log('=================================');
+  }
 
   const missing: string[] = [];
   
@@ -42,23 +45,27 @@ function validateEnv(): EnvConfig {
   }
 
   if (missing.length > 0) {
-    const errorMsg = `Missing required environment variables:\n${missing.join('\n')}
+    // Only throw error during build/server-side
+    // In browser, the values should already be inlined by Next.js
+    if (isServer) {
+      const errorMsg = `Missing required environment variables:\n${missing.join('\n')}
 
 Please create a .env.local file with the following variables:
 ${requiredEnvVars.map(v => `${v}=your_value_here`).join('\n')}
 
 See .env.example for more details.`;
-    
-    console.error('ENV VALIDATION FAILED:', errorMsg);
-    
-    // In production, throw error
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error(errorMsg);
+      
+      console.error('ENV VALIDATION FAILED:', errorMsg);
+      
+      // In production, throw error
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error(errorMsg);
+      }
+      
+      // In development, log warning
+      console.warn(`⚠️  ${errorMsg}`);
     }
-    
-    // In development, log warning
-    console.warn(`⚠️  ${errorMsg}`);
-  } else {
+  } else if (isServer) {
     console.log('✅ All required environment variables are present!');
   }
 
