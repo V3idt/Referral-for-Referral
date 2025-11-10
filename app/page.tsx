@@ -28,7 +28,25 @@ export default function Home() {
   const [selectedLink, setSelectedLink] = useState(null);
   const [showExchangeDialog, setShowExchangeDialog] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [animatedNumber, setAnimatedNumber] = useState<number | string>(5);
   const queryClient = useQueryClient();
+
+  // Animate referral numbers: 5 → 10 → 15 → 30 → "More" (then stop)
+  useEffect(() => {
+    const values = [5, 10, 15, 30, "More"];
+    let index = 0;
+    
+    const interval = setInterval(() => {
+      index++;
+      if (index >= values.length) {
+        clearInterval(interval); // Stop when reaching "More"
+        return;
+      }
+      setAnimatedNumber(values[index]);
+    }, 1000); // 1 second interval (faster)
+    
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -266,17 +284,68 @@ export default function Home() {
               {onlineCount} Users Online Now
             </Badge>
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Referral-for-Referral
-              <br />
-              <span className="text-emerald-200 dark:text-emerald-300">Fair & Trusted Exchange</span>
+              Get{" "}
+              <span className="inline-block min-w-[120px] text-emerald-200 dark:text-emerald-300">
+                {animatedNumber}
+              </span>{" "}
+              referrals
             </h1>
-            <p className="text-xl md:text-2xl text-emerald-100 dark:text-emerald-200 mb-8 max-w-2xl mx-auto">
-              Exchange referral links with verified users. Chat, share proof, build trust.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <div className="flex items-center gap-2 text-emerald-100 dark:text-emerald-200">
+            
+            {/* How It Works Steps */}
+            <div className="max-w-3xl mx-auto space-y-6 text-left">
+              <h2 className="text-2xl font-semibold text-emerald-100 dark:text-emerald-200 mb-6 text-center">
+                How It Works:
+              </h2>
+              
+              <div className="grid gap-4 md:grid-cols-2">
+                {/* Step 1 */}
+                <div className="flex items-start gap-3 bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                  <div className="flex-shrink-0 w-8 h-8 bg-emerald-200 dark:bg-emerald-300 rounded-full flex items-center justify-center text-emerald-900 font-bold">
+                    1
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">Browse posts below</p>
+                    <p className="text-emerald-100 dark:text-emerald-200 text-sm">Find an online user with a referral you want</p>
+                  </div>
+                </div>
+
+                {/* Step 2 */}
+                <div className="flex items-start gap-3 bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                  <div className="flex-shrink-0 w-8 h-8 bg-emerald-200 dark:bg-emerald-300 rounded-full flex items-center justify-center text-emerald-900 font-bold">
+                    2
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">Click "Request Swap"</p>
+                    <p className="text-emerald-100 dark:text-emerald-200 text-sm">Send them a swap request on their post</p>
+                  </div>
+                </div>
+
+                {/* Step 3 */}
+                <div className="flex items-start gap-3 bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                  <div className="flex-shrink-0 w-8 h-8 bg-emerald-200 dark:bg-emerald-300 rounded-full flex items-center justify-center text-emerald-900 font-bold">
+                    3
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">Exchange referral links</p>
+                    <p className="text-emerald-100 dark:text-emerald-200 text-sm">You use theirs, they use yours</p>
+                  </div>
+                </div>
+
+                {/* Step 4 */}
+                <div className="flex items-start gap-3 bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                  <div className="flex-shrink-0 w-8 h-8 bg-emerald-200 dark:bg-emerald-300 rounded-full flex items-center justify-center text-emerald-900 font-bold">
+                    4
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">Both get rewards!</p>
+                    <p className="text-emerald-100 dark:text-emerald-200 text-sm">Win-win situation for everyone</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center gap-2 text-emerald-100 dark:text-emerald-200 pt-4">
                 <TrendingUp className="w-5 h-5" />
-                <span className="font-medium">{allLinks.length} active referrals</span>
+                <span className="font-medium">{allLinks.length} active referrals waiting</span>
               </div>
             </div>
           </motion.div>
@@ -306,10 +375,10 @@ export default function Home() {
                   <SelectValue placeholder="Date posted" />
                 </SelectTrigger>
                 <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
-                  <SelectItem value="all">All time</SelectItem>
-                  <SelectItem value="today">Today</SelectItem>
-                  <SelectItem value="week">This week</SelectItem>
-                  <SelectItem value="month">This month</SelectItem>
+                  <SelectItem value="all" className="dark:text-white">All time</SelectItem>
+                  <SelectItem value="today" className="dark:text-white">Today</SelectItem>
+                  <SelectItem value="week" className="dark:text-white">This week</SelectItem>
+                  <SelectItem value="month" className="dark:text-white">This month</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -321,11 +390,11 @@ export default function Home() {
                   <SelectValue placeholder="Trust score" />
                 </SelectTrigger>
                 <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
-                  <SelectItem value="0">Any score</SelectItem>
-                  <SelectItem value="50">50+ stars</SelectItem>
-                  <SelectItem value="75">75+ stars</SelectItem>
-                  <SelectItem value="90">90+ stars</SelectItem>
-                  <SelectItem value="100">100 stars</SelectItem>
+                  <SelectItem value="0" className="dark:text-white">Any score</SelectItem>
+                  <SelectItem value="50" className="dark:text-white">50+ stars</SelectItem>
+                  <SelectItem value="75" className="dark:text-white">75+ stars</SelectItem>
+                  <SelectItem value="90" className="dark:text-white">90+ stars</SelectItem>
+                  <SelectItem value="100" className="dark:text-white">100 stars</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -337,9 +406,9 @@ export default function Home() {
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
-                  <SelectItem value="online">Online first</SelectItem>
-                  <SelectItem value="trust">Trust score</SelectItem>
-                  <SelectItem value="recent">Most recent</SelectItem>
+                  <SelectItem value="online" className="dark:text-white">Online first</SelectItem>
+                  <SelectItem value="trust" className="dark:text-white">Trust score</SelectItem>
+                  <SelectItem value="recent" className="dark:text-white">Most recent</SelectItem>
                 </SelectContent>
               </Select>
             </div>
