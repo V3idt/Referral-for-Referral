@@ -21,6 +21,17 @@ interface EnvConfig {
 }
 
 function validateEnv(): EnvConfig {
+  // DEBUG: Log all environment variables during build
+  console.log('=================================');
+  console.log('ENV VALIDATION DEBUG:');
+  console.log('NODE_ENV:', process.env.NODE_ENV);
+  console.log('NEXT_PUBLIC_SUPABASE_URL present?', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
+  console.log('NEXT_PUBLIC_SUPABASE_URL value:', process.env.NEXT_PUBLIC_SUPABASE_URL ? `${process.env.NEXT_PUBLIC_SUPABASE_URL.substring(0, 30)}...` : 'UNDEFINED');
+  console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY present?', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY value:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? `${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.substring(0, 30)}...` : 'UNDEFINED');
+  console.log('All process.env keys:', Object.keys(process.env).filter(k => k.includes('SUPABASE')));
+  console.log('=================================');
+
   const missing: string[] = [];
   
   // Check required environment variables
@@ -38,6 +49,8 @@ ${requiredEnvVars.map(v => `${v}=your_value_here`).join('\n')}
 
 See .env.example for more details.`;
     
+    console.error('ENV VALIDATION FAILED:', errorMsg);
+    
     // In production, throw error
     if (process.env.NODE_ENV === 'production') {
       throw new Error(errorMsg);
@@ -45,6 +58,8 @@ See .env.example for more details.`;
     
     // In development, log warning
     console.warn(`⚠️  ${errorMsg}`);
+  } else {
+    console.log('✅ All required environment variables are present!');
   }
 
   return {
