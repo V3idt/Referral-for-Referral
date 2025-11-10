@@ -62,14 +62,27 @@ export default function LoginPage() {
         if (error) throw error;
 
         if (data.user) {
-          // Profile is automatically created by database trigger
-          // Just show success message
-          toast.success('Account created! Welcome to Referral-for-Referral!');
+          // Check if email confirmation is required
+          const session = data.session;
           
-          // Small delay to ensure trigger completes
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          router.push('/');
+          if (!session) {
+            // Email confirmation required - user must check their email
+            toast.success('Account created! Please check your email to confirm your account.', {
+              duration: 6000,
+            });
+            // Switch to sign-in mode so they can sign in after confirming
+            setIsSignUp(false);
+            // Clear password field for security
+            setPassword('');
+          } else {
+            // No confirmation required or auto-confirmed
+            toast.success('Account created! Welcome to Referral-for-Referral!');
+            
+            // Small delay to ensure trigger completes
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            router.push('/');
+          }
         }
       } else {
         // Sign in
@@ -84,7 +97,18 @@ export default function LoginPage() {
         router.push('/');
       }
     } catch (error: any) {
-      toast.error(error.message || 'Authentication failed');
+      // Provide helpful error messages
+      const errorMessage = error.message || 'Authentication failed';
+      
+      if (errorMessage.includes('Email not confirmed')) {
+        toast.error('Please confirm your email before signing in. Check your inbox for the confirmation link.', {
+          duration: 6000,
+        });
+      } else if (errorMessage.includes('Invalid login credentials')) {
+        toast.error('Invalid email or password. Please try again.');
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
