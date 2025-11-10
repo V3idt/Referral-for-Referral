@@ -19,7 +19,7 @@ export interface ReferralLink {
   user_id: string;
   service_name: string;
   referral_url: string;
-  description: string;
+  description?: string | null;
   what_i_get?: string | null;
   logo_url?: string | null;
   status: 'active' | 'paused' | 'fulfilled';

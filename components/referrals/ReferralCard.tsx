@@ -171,25 +171,7 @@ export default function ReferralCard({
         </CardHeader>
 
         <CardContent className="space-y-2 py-3">
-          {/* What the poster gets (They Get from viewer's perspective) */}
-          {link.what_i_get && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2 border border-blue-200 dark:border-blue-800">
-              <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-0.5 flex items-center gap-1">
-                <Handshake className="w-3 h-3" /> They Get:
-              </p>
-              <p className="text-xs text-gray-900 dark:text-gray-100">{link.what_i_get}</p>
-            </div>
-          )}
-
-          {/* What you get if you use their link */}
-          <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-2 border border-emerald-200 dark:border-emerald-800">
-            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-0.5 flex items-center gap-1">
-              <Gift className="w-3 h-3" /> You Get:
-            </p>
-            <p className="text-xs text-gray-900 dark:text-gray-100 font-semibold">{link.description}</p>
-          </div>
-
-          {/* Referral Link */}
+          {/* Referral Link - Primary focus */}
           <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-2 border border-purple-200 dark:border-purple-800">
             <p className="text-xs text-purple-600 dark:text-purple-400 font-medium mb-0.5 flex items-center gap-1">
               <LinkIcon className="w-3 h-3" /> Referral Link:
@@ -203,6 +185,22 @@ export default function ReferralCard({
               {link.referral_url}
             </a>
           </div>
+
+          {/* Minimal offer details - only show if provided */}
+          {(link.what_i_get || link.description) && (
+            <div className="pt-2 space-y-1">
+              {link.what_i_get && (
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  They get: {link.what_i_get}
+                </p>
+              )}
+              {link.description && (
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  You get: {link.description}
+                </p>
+              )}
+            </div>
+          )}
 
           {link.total_exchanges > 0 && (
             <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 pt-1">

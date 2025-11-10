@@ -106,20 +106,19 @@ export default function AddLinkDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description" className="dark:text-gray-200">What Others Get *</Label>
+              <Label htmlFor="description" className="dark:text-gray-200">What Others Get (optional)</Label>
               <Textarea
                 id="description"
                 placeholder="e.g., $10 off first order, 30 days free trial"
                 value={formData.description}
                 onChange={(e) => handleChange("description", e.target.value)}
-                required
                 rows={2}
                 className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="what_i_get" className="dark:text-gray-200">What You Get</Label>
+              <Label htmlFor="what_i_get" className="dark:text-gray-200">What You Get (optional)</Label>
               <Textarea
                 id="what_i_get"
                 placeholder="e.g., $10 credit when someone signs up"
